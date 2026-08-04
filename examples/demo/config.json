@@ -1,0 +1,26 @@
+{
+  "person": {
+    "name": "Robin Vale",
+    "file_prefix": "Robin_Vale",
+    "letter_prefix": null
+  },
+  "render": {
+    "default_photo": "images/avatar.png",
+    "default_style": "a",
+    "browser_bin": null
+  },
+  "spine": {
+    "locked_order": ["exp-self-directed", "exp-current-role"],
+    "title_markers": {
+      "exp-self-directed": ["Independent Projects"],
+      "exp-current-role": ["Meridian Systems"],
+      "exp-course-tutor": ["Peer Tutor"]
+    },
+    "optional_ids": ["exp-course-tutor", "vol-community"],
+    "verbatim_ids": ["languages-line", "skill-note"],
+    "education": { "required_titles": ["BSc"], "require_detail_for": [] },
+    "heading_aliases": {}
+  },
+  "limits": { "soft_line_budget": 57, "max_pages": 1 },
+  "display_names": {}
+}

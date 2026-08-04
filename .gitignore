@@ -1,0 +1,25 @@
+# Your own data, if you run the toolkit from inside this checkout (root = repo root).
+# examples/demo/config.json is a tracked exception — it's part of the shipped demo, not user data.
+/config.json
+/profile/
+/master/
+/applications/
+/produced/
+/workspace/
+
+# Rendered output is a build artifact everywhere except the one committed demo hero image.
+**/generate-pdfs/
+
+# Per-company generated CV markdown regenerates from application.md on demand; the demo's copy
+# ships tracked (examples/demo/expected/ + the file itself) so the shape is visible without a
+# build step, but a real user's own applications/ tree is already covered by /applications/ above.
+
+# Node / Python housekeeping.
+node_modules/
+package-lock.json.bak
+__pycache__/
+*.pyc
+
+# OS noise.
+.DS_Store
+Thumbs.db
