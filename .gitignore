@@ -1,3 +1,7 @@
+# Your own wordlist for scripts/audit_public.py — see .private-terms.example. Never committed;
+# the whole point is that it doesn't leak the terms it protects.
+/.private-terms
+
 # Your own data, if you run the toolkit from inside this checkout (root = repo root).
 # examples/demo/config.json is a tracked exception — it's part of the shipped demo, not user data.
 /config.json
