@@ -52,12 +52,26 @@ and mangles an em dash or accented character. Verified: demo.sh end-to-end, a ha
 broken-spine fixture (reordered entries + dropped verbatim lines both caught), and the
 NOT CONFIGURED path on an empty config.
 
+**`engine.manifest` + `scripts/sync.sh` + `scripts/audit_public.py` built (2026-08-04):** the
+manifest-driven pull/push mechanism, built specifically before any dogfooding from the private
+folder (that was the plan, and it held). `engine.manifest` whitelists exactly the paths
+considered "engine"; `sync.sh pull|push` copies only those paths between a canonical repo and
+any root; `audit_public.py` is the leak gate `push` always runs first, refusing to write
+anything on any finding (unexpected binary, email/phone outside a small allowlist, absolute
+path, forbidden content prefix, or a gitignored `.private-terms` term). Verified the actual
+guarantee, not just the check: pushed from a root containing a fake `profile/background.md` and
+confirmed it never entered the audit's file list or the destination at all — content paths are
+structurally invisible to the mechanism, not merely blocked by a rule that could have a gap.
+Also verified a pulled copy is a fully working clone (`bash demo.sh` runs clean), and added a
+`scripts/hooks/pre-commit` + `scripts/install_hooks.sh` pair (git doesn't track `.git/hooks/`,
+so installation is a manual one-time step) — tested to actually block a bad commit.
+
 **Not yet built** (see the plan file this session produced, in this machine's
 `~/.claude/plans/` history, for the full M1–M4 breakdown):
 - Rest of M1: `tests/` (golden-file + broken-spine fixture, formalized as pytest — currently only
-  manually verified), CI, `scripts/sync.sh` + `engine.manifest` + `scripts/audit_public.py` — the
-  manifest-driven pull/push mechanism that lets Miguel improve the engine from either the public
-  or private checkout without personal data ever crossing into the public repo
+  manually verified, same for the leak-gate fixtures above), CI (lint, tests, audit, a
+  render-matrix job on ubuntu/macos — `lib.sh`'s cross-platform fixes are still only live-tested
+  on Windows)
 - Blank starter `templates/` for a real user's own data, `docs/{GETTING-STARTED,SPEC,NO-AI,CONFIG}.md`
 - Agent instructions (`agents/CONTEXT.md`, `cv-setup.md`, `cv-tailor.md`) + Claude Code skills,
   Cursor rules, and a generated ChatGPT-paste variant
@@ -69,8 +83,10 @@ NOT CONFIGURED path on an empty config.
 ## Relationship to the private `job-hunt/` folder
 
 Deliberately **not** dogfooded yet, and diverging by design rather than forking/syncing from day
-one — see `[[project_jobhuntkit]]` for the reasoning and the leak-prevention mechanism
-(`engine.manifest`-bounded sync, planned for M1) that makes future syncing safe once built.
+one — see `[[project_jobhuntkit]]` for the reasoning. The leak-prevention mechanism
+(`engine.manifest`-bounded `sync.sh` + `audit_public.py`) is now **built and verified** (see
+Current state above), which is what makes eventually syncing the private folder to this engine
+safe — actually doing that migration is still M4, deliberately last.
 
 ## End of Day Checklist
 
@@ -82,4 +98,4 @@ one — see `[[project_jobhuntkit]]` for the reasoning and the leak-prevention m
 
 ---
 
-> Last updated: 2026-08-04 (check_cv.py session)
+> Last updated: 2026-08-04 (sync.sh + audit_public.py session)

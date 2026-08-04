@@ -99,10 +99,12 @@ land.
 Working: build, validate (structure + coverage), render, verify — on a fictional demo persona,
 cross-platform. `check_cv.py`'s locked spine, education requirements, and verbatim-line checks
 are entirely `config.json`-driven; a fresh clone with nothing configured prints a clear
-"not configured" message rather than a false "all OK". Not yet built: `engine.manifest` +
-a leak-audit gate, posting scanning and staging, cover letters, blank starter templates for your
-own data, agent instructions (Claude Code / Cursor / ChatGPT), and pluggable posting extractors
-for sites beyond a plain saved HTML page. Tracked as milestones in this repo's issues.
+"not configured" message rather than a false "all OK". A leak gate (`scripts/audit_public.py`)
+and a manifest-bounded sync mechanism (`engine.manifest` + `scripts/sync.sh`) are also in —
+`bash scripts/install_hooks.sh` wires the same check into a pre-commit hook. Not yet built:
+a formal test suite + CI, posting scanning and staging, cover letters, blank starter templates
+for your own data, agent instructions (Claude Code / Cursor / ChatGPT), and pluggable posting
+extractors for sites beyond a plain saved HTML page. Tracked as milestones in this repo's issues.
 
 ## Config
 
