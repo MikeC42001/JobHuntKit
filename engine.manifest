@@ -1,0 +1,36 @@
+# engine.manifest — the whitelist of paths that are "engine": pure tooling, safe to copy in
+# either direction between two JobHuntKit-shaped checkouts, and guaranteed (by construction, not
+# by discipline) to never carry personal data.
+#
+# Read by two things:
+#   scripts/sync.sh          — pull copies these paths FROM a canonical repo INTO your root;
+#                               push copies them FROM your root INTO a canonical repo. Nothing
+#                               outside this list is ever touched in either direction.
+#   scripts/audit_public.py  — the leak gate that runs before every push. It also refuses to run
+#                               at all if this file itself ever lists one of the forbidden
+#                               content prefixes (profile/, master/, applications/, produced/,
+#                               workspace/, config.json) — belt and suspenders.
+#
+# One path per line, relative to the repo root. A trailing "/" means "this whole directory tree";
+# without one it means "exactly this file". Blank lines and lines starting with "#" are ignored.
+# A path that doesn't exist yet (a future milestone's file) is skipped quietly, not an error —
+# so this file can forward-declare paths before they're built.
+
+engine/
+scripts/
+templates/
+agents/
+docs/
+examples/
+.claude/
+.cursor/
+demo.sh
+README.md
+LICENSE
+NOTICE
+CONTRIBUTING.md
+AGENTS.md
+config.example.json
+engine.manifest
+.private-terms.example
+.gitignore

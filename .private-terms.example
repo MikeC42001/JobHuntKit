@@ -1,0 +1,14 @@
+# .private-terms — your own wordlist of things that must never appear in a committed file.
+#
+# Copy this file to `.private-terms` (gitignored — never committed, so the wordlist itself never
+# leaks the very things it's protecting) and fill in your own: your real name/surname, real
+# employer names, unreleased product codenames, anything else that would be a problem if it
+# showed up in engine code, a commit message, or a doc file.
+#
+# One term per line, plain substring match (case-sensitive). Blank lines and lines starting with
+# # are ignored. scripts/audit_public.py reads this automatically if it exists at the repo root.
+#
+# Example entries (fake, just showing the shape):
+# Jane Doe
+# Acme Robotics Inc
+# Project Nightingale
