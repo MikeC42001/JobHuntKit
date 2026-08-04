@@ -67,6 +67,7 @@ $EDITOR templates/minimal-full.md           # only if you need slots the demo do
 # replace applications/offer-pages/Orbital Dynamics/ with your own applications/offer-pages/<Company>/
 cd ..
 python3 engine/build_cv.py --root my-cv-data "my-cv-data/applications/offer-pages/<Company>"
+python3 engine/check_cv.py --root my-cv-data     # confirms your locked spine actually landed
 bash engine/render_cv_minimal.sh --root my-cv-data "my-cv-data/applications/offer-pages/<Company>/cv-minimal.md"
 python3 engine/verify_cvs.py --root my-cv-data
 ```
@@ -88,17 +89,20 @@ land.
 | Script | Does |
 |---|---|
 | `engine/build_cv.py` | Assembles `cv-minimal.md` from the master + template + `application.md` |
+| `engine/check_cv.py` | Validates the locked spine landed correctly (`structure`, the default) and reports what's present/omitted/silently-missing per application (`--coverage`) |
 | `engine/verify_cvs.py` | Confirms a rendered PDF is exactly one page (or whatever `limits.max_pages` says) |
 | `engine/render_cv_minimal.sh` | Renders `cv-minimal.md` to a one-column PDF with a circular photo |
 | `engine/lib.sh` | Shared cross-platform browser discovery, sourced by the renderers |
 
 ## Status
 
-This is the first working slice: build, render, verify, on a fictional demo persona, working
-cross-platform. Not yet built: a structure/coverage validator (`check_cv.py`) that enforces the
-locked spine, posting scanning and staging, cover letters, blank starter templates for your own
-data, agent instructions (Claude Code / Cursor / ChatGPT), and pluggable posting extractors for
-sites beyond a plain saved HTML page. Tracked as milestones in this repo's issues.
+Working: build, validate (structure + coverage), render, verify — on a fictional demo persona,
+cross-platform. `check_cv.py`'s locked spine, education requirements, and verbatim-line checks
+are entirely `config.json`-driven; a fresh clone with nothing configured prints a clear
+"not configured" message rather than a false "all OK". Not yet built: `engine.manifest` +
+a leak-audit gate, posting scanning and staging, cover letters, blank starter templates for your
+own data, agent instructions (Claude Code / Cursor / ChatGPT), and pluggable posting extractors
+for sites beyond a plain saved HTML page. Tracked as milestones in this repo's issues.
 
 ## Config
 

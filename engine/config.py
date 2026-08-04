@@ -24,6 +24,17 @@ clone with no config.json still runs (with spine checking disabled — see check
 import argparse
 import json
 import os
+import sys
+
+# Every engine script imports this module first, so this is the one place to force UTF-8 output.
+# Without it, Python on Windows defaults stdout/stderr to the console's codepage (cp1252, not
+# UTF-8) even under Git Bash — any em dash or accented character (a name, a Portuguese heading
+# alias) then prints as a mangled replacement character instead of erroring loudly. reconfigure()
+# is Python 3.7+; guarded because it's absent when stdout is replaced by a non-TextIOWrapper
+# (e.g. under some test runners).
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8")
 
 ENGINE_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(ENGINE_DIR)
@@ -105,6 +116,41 @@ class Config:
     @property
     def display_names(self):
         return self.get("display_names", {})
+
+    @property
+    def locked_order(self):
+        return self.get("spine.locked_order", [])
+
+    @property
+    def title_markers(self):
+        return self.get("spine.title_markers", {})
+
+    @property
+    def optional_ids(self):
+        return self.get("spine.optional_ids", [])
+
+    @property
+    def verbatim_ids(self):
+        return self.get("spine.verbatim_ids", [])
+
+    @property
+    def education_required_titles(self):
+        return self.get("spine.education.required_titles", [])
+
+    @property
+    def education_require_detail_for(self):
+        return self.get("spine.education.require_detail_for", [])
+
+    @property
+    def heading_aliases_extra(self):
+        return self.get("spine.heading_aliases", {})
+
+    @property
+    def spine_configured(self):
+        """False for a fresh clone with no spine set up yet — check_cv.py uses this to print a
+        NOT CONFIGURED banner instead of a misleading "all OK" that isn't actually checking
+        anything."""
+        return bool(self.locked_order or self.education_required_titles or self.verbatim_ids)
 
     @property
     def soft_line_budget(self):
