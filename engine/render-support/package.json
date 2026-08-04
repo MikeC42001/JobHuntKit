@@ -1,0 +1,12 @@
+{
+  "name": "jobhuntkit-render-support",
+  "version": "1.0.0",
+  "description": "Markdown-to-HTML rendering support for JobHuntKit's PDF renderers",
+  "main": "cv2html.js",
+  "private": true,
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "marked": "^18.0.7"
+  }
+}

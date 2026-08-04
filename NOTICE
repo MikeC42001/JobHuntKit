@@ -1,0 +1,11 @@
+JobHuntKit bundles the following third-party components:
+
+IBM Plex Sans / IBM Plex Mono (engine/render-support/fonts/*.woff2)
+  Copyright 2017 The IBM Plex Project Authors (https://github.com/IBM/plex)
+  Licensed under the SIL Open Font License, Version 1.1.
+  Full license text: engine/render-support/fonts/OFL.txt
+
+marked (npm package, installed at render time from engine/render-support/package.json)
+  Copyright (c) 2011-2018, Christopher Jeffrey
+  Licensed under the MIT License.
+  https://github.com/markedjs/marked
