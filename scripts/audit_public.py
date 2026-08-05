@@ -72,6 +72,9 @@ PHONE_RE = re.compile(r"\(?\+\d{1,3}\)?[\s.-]?\d{2,4}[\s.-]?\d{3}[\s.-]?\d{3,4}"
 PHONE_ALLOWLIST = {"(+1) 555 010 2938"}
 
 ABS_PATH_RE = re.compile(r"[Cc]:\\|/c/Users/|/Users/[A-Za-z]|/home/[A-Za-z]")
+# Generic, non-personal Windows install paths — no username or directory layout leaked, unlike
+# what ABS_PATH_RE exists to catch. tests/conftest.py's bash_executable() references these.
+ABS_PATH_ALLOWLIST_PREFIXES = ["C:\\Program Files\\Git\\"]
 
 # This file's own source necessarily contains the literal patterns above (they're what it's
 # built to detect) — the content-based checks (email/phone/absolute-path/private-terms) would
@@ -189,9 +192,12 @@ def check_file(root, path, terms):
         if m.group(0) not in PHONE_ALLOWLIST:
             findings.append(Finding(rel_posix, "phone-like-string", m.group(0)))
 
-    m = ABS_PATH_RE.search(text)
-    if m:
+    for m in ABS_PATH_RE.finditer(text):
+        start = m.start()
+        if any(text[start:start + len(p)] == p for p in ABS_PATH_ALLOWLIST_PREFIXES):
+            continue
         findings.append(Finding(rel_posix, "absolute-path", m.group(0)))
+        break
 
     for term in terms:
         if term in text:

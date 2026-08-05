@@ -111,12 +111,14 @@ file_mtime() {
   stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null || echo ""
 }
 
-# Headless flags, with --no-sandbox added automatically when running as root (CI/Docker) since
-# Chrome refuses to run sandboxed as root and exits non-zero with no other symptom than this
-# script's generic "PDF was NOT updated" warning.
+# Headless flags, with --no-sandbox added when running as root (Chrome refuses to run sandboxed
+# as root, exiting non-zero with no clearer symptom than this script's generic "PDF was NOT
+# updated" warning) or under CI ($CI=true, set by GitHub Actions and most other CI providers) —
+# GH Actions' ubuntu runners restrict the setuid sandbox helper for non-root users too, which
+# crashes headless Chromium outright (SIGABRT) rather than falling back cleanly.
 browser_flags() {
   local flags="--headless=new --disable-gpu --print-to-pdf-no-header --no-pdf-header-footer"
-  if [ "$(id -u 2>/dev/null || echo 1)" = "0" ]; then
+  if [ "$(id -u 2>/dev/null || echo 1)" = "0" ] || [ "${CI:-}" = "true" ]; then
     flags="$flags --no-sandbox"
   fi
   printf '%s' "$flags"

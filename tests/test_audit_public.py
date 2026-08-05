@@ -7,6 +7,7 @@ import os
 import subprocess
 
 import audit_public
+from conftest import bash_executable
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -60,6 +61,25 @@ def test_windows_absolute_path_is_flagged(tmp_path):
 
 def test_posix_absolute_path_is_flagged(tmp_path):
     path = _write(str(tmp_path / "docs" / "note.md"), "See /Users/someone/Documents/cv.md")
+    findings = audit_public.check_file(str(tmp_path), path, terms=[])
+    assert any(f.category == "absolute-path" for f in findings)
+
+
+def test_allowlisted_generic_windows_path_is_not_flagged(tmp_path):
+    """A generic install path (no username/directory layout leaked) like the one
+    tests/conftest.py's bash_executable() references must not trip the personal-path check."""
+    path = _write(str(tmp_path / "docs" / "note.md"), r'"C:\Program Files\Git\bin\bash.exe"')
+    findings = audit_public.check_file(str(tmp_path), path, terms=[])
+    assert not any(f.category == "absolute-path" for f in findings)
+
+
+def test_non_allowlisted_path_after_an_allowlisted_one_is_still_flagged(tmp_path):
+    """The allowlist must not blanket-suppress every absolute-path finding in a file just
+    because the first match happens to be a safe one."""
+    path = _write(
+        str(tmp_path / "docs" / "note.md"),
+        'r"C:\\Program Files\\Git\\bin\\bash.exe"\n' r'See C:\Users\someone\Documents\cv.md',
+    )
     findings = audit_public.check_file(str(tmp_path), path, terms=[])
     assert any(f.category == "absolute-path" for f in findings)
 
@@ -150,7 +170,7 @@ def test_sync_push_never_copies_or_scans_forbidden_content(tmp_path):
 
     sync_sh = os.path.join(REPO_ROOT, "scripts", "sync.sh")
     result = subprocess.run(
-        ["bash", sync_sh, "push", "--root", str(src), "--to", str(dst)],
+        [bash_executable(), sync_sh, "push", "--root", str(src), "--to", str(dst)],
         capture_output=True, text=True, cwd=REPO_ROOT, check=False,
     )
 
@@ -173,7 +193,7 @@ def test_sync_push_aborts_and_writes_nothing_on_a_finding(tmp_path):
 
     sync_sh = os.path.join(REPO_ROOT, "scripts", "sync.sh")
     result = subprocess.run(
-        ["bash", sync_sh, "push", "--root", str(src), "--to", str(dst)],
+        [bash_executable(), sync_sh, "push", "--root", str(src), "--to", str(dst)],
         capture_output=True, text=True, cwd=REPO_ROOT, check=False,
     )
 

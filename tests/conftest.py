@@ -29,3 +29,20 @@ def demo_root(tmp_path):
     dest = tmp_path / "demo"
     shutil.copytree(DEMO_ROOT, dest)
     return str(dest)
+
+
+def bash_executable():
+    """Path to a real bash for tests that shell out to a .sh script. On Windows, "bash" on PATH
+    can resolve to the WSL launcher stub Windows itself ships (which errors out if no WSL distro
+    is installed, as on a stock GitHub Actions windows-latest runner) instead of Git for
+    Windows' own bash.exe, which every dev machine and that same runner both also ship.
+    A real end user never hits this: they already run these scripts from inside Git Bash, so
+    there's no new "bash" process to resolve; this only matters for spawning one from Python."""
+    if sys.platform == "win32":
+        for candidate in (
+            r"C:\Program Files\Git\bin\bash.exe",
+            r"C:\Program Files\Git\usr\bin\bash.exe",
+        ):
+            if os.path.isfile(candidate):
+                return candidate
+    return "bash"
