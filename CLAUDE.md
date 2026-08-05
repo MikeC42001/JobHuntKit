@@ -70,7 +70,7 @@ Also verified a pulled copy is a fully working clone (`bash demo.sh` runs clean)
 `scripts/hooks/pre-commit` + `scripts/install_hooks.sh` pair (git doesn't track `.git/hooks/`,
 so installation is a manual one-time step) — tested to actually block a bad commit.
 
-**`tests/` (pytest) + CI built (2026-08-05):** 27 tests, pure-Python (no browser/Node needed) —
+**`tests/` (pytest) + CI built (2026-08-05):** 29 tests, pure-Python (no browser/Node needed) —
 golden-file diff for `build_cv.py`; `check_cv.py` structure fixtures (reordered experience,
 dropped verbatim line, missing locked entry, NOT CONFIGURED banner) + coverage math (locked-slot
 count proven non-hardcoded, "13 of 14" pinned for the demo); `audit_public.py` fixtures for every
