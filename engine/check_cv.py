@@ -149,7 +149,7 @@ def check_structure(cfg, company_dir, alias_map):
         matched = next((req for req in require_detail_for if req in title), None)
         if not matched:
             continue
-        content_lines = [l for l in body_lines if l.strip()]
+        content_lines = [line for line in body_lines if line.strip()]
         if not content_lines:
             failures.append(f"education: {matched} has no detail line at all")
         elif len(content_lines) == 1 and BARE_URL_RE.match(content_lines[0].strip()):

@@ -27,11 +27,12 @@ master. `engine/build_cv.py` assembles the three into `cv-minimal.md`; `engine/c
 validates the locked spine landed correctly and reports coverage; `engine/render_cv_minimal.sh`
 renders it to PDF; `engine/verify_cvs.py` gates page count.
 
-## Current state (M0 complete; M1 in progress, 2026-08-04)
+## Current state (M0 complete; M1 complete, 2026-08-05)
 
 Working end-to-end: clone → `bash demo.sh` → build → validate → render → verify → one-page PDF,
-cross-platform-safe (macOS/Linux fixes in `engine/lib.sh` are code-reviewed but only tested live
-on Windows so far — see Next below). Demo persona "Robin Vale" (`examples/demo/`) is entirely
+cross-platform-safe (macOS/Linux fixes in `engine/lib.sh` are code-reviewed and only tested live
+on Windows so far — the new `render-matrix` CI job runs `demo.sh` on ubuntu/macos too, but only
+once `feat/m1-tests-ci` is pushed and CI actually runs). Demo persona "Robin Vale" (`examples/demo/`) is entirely
 fictional, applying to a fictional "Orbital Dynamics." Golden-file
 (`examples/demo/expected/cv-minimal.md`) and rendered output
 (`examples/demo/output/cv-minimal.{pdf,png}`) are committed. Pushed to GitHub (private)
@@ -66,12 +67,22 @@ Also verified a pulled copy is a fully working clone (`bash demo.sh` runs clean)
 `scripts/hooks/pre-commit` + `scripts/install_hooks.sh` pair (git doesn't track `.git/hooks/`,
 so installation is a manual one-time step) — tested to actually block a bad commit.
 
+**`tests/` (pytest) + CI built (2026-08-05):** 27 tests, pure-Python (no browser/Node needed) —
+golden-file diff for `build_cv.py`; `check_cv.py` structure fixtures (reordered experience,
+dropped verbatim line, missing locked entry, NOT CONFIGURED banner) + coverage math (locked-slot
+count proven non-hardcoded, "13 of 14" pinned for the demo); `audit_public.py` fixtures for every
+finding category, plus the content-invisibility guarantee exercised **through the real
+`scripts/sync.sh`** via subprocess (not a reimplementation) — a fake `profile/` never enters the
+audit's file list or a push destination, and a leaked email aborts the push with nothing written.
+`tests/test_audit_public.py` was added to `audit_public.py`'s `CONTENT_CHECK_SELF_EXCLUDE`
+(same reason as `audit_public.py` itself — its fixtures are deliberately-fake trigger patterns).
+`.github/workflows/ci.yml`: `ruff` lint, pytest on ubuntu/macos/windows, and a `render-matrix`
+job (ubuntu/macos, via `browser-actions/setup-chrome`) that runs the real `demo.sh` — first
+cross-platform signal for `lib.sh`'s fixes beyond Windows. `tests/`, `.github/`, and
+`requirements-dev.txt` added to `engine.manifest`. On `feat/m1-tests-ci`, not yet merged to `dev`.
+
 **Not yet built** (see the plan file this session produced, in this machine's
 `~/.claude/plans/` history, for the full M1–M4 breakdown):
-- Rest of M1: `tests/` (golden-file + broken-spine fixture, formalized as pytest — currently only
-  manually verified, same for the leak-gate fixtures above), CI (lint, tests, audit, a
-  render-matrix job on ubuntu/macos — `lib.sh`'s cross-platform fixes are still only live-tested
-  on Windows)
 - Blank starter `templates/` for a real user's own data, `docs/{GETTING-STARTED,SPEC,NO-AI,CONFIG}.md`
 - Agent instructions (`agents/CONTEXT.md`, `cv-setup.md`, `cv-tailor.md`) + Claude Code skills,
   Cursor rules, and a generated ChatGPT-paste variant
@@ -98,4 +109,4 @@ safe — actually doing that migration is still M4, deliberately last.
 
 ---
 
-> Last updated: 2026-08-04 (sync.sh + audit_public.py session)
+> Last updated: 2026-08-05 (tests/ + CI session)

@@ -101,10 +101,26 @@ cross-platform. `check_cv.py`'s locked spine, education requirements, and verbat
 are entirely `config.json`-driven; a fresh clone with nothing configured prints a clear
 "not configured" message rather than a false "all OK". A leak gate (`scripts/audit_public.py`)
 and a manifest-bounded sync mechanism (`engine.manifest` + `scripts/sync.sh`) are also in —
-`bash scripts/install_hooks.sh` wires the same check into a pre-commit hook. Not yet built:
-a formal test suite + CI, posting scanning and staging, cover letters, blank starter templates
-for your own data, agent instructions (Claude Code / Cursor / ChatGPT), and pluggable posting
-extractors for sites beyond a plain saved HTML page. Tracked as milestones in this repo's issues.
+`bash scripts/install_hooks.sh` wires the same check into a pre-commit hook. A pytest suite
+covers the golden build, the structure/coverage checkers, and the leak gate (see Running tests
+below), and CI (`.github/workflows/ci.yml`) runs it on every push — lint, the pytest suite on
+ubuntu/macos/windows, and a render-matrix job proving `demo.sh` actually works end-to-end on
+ubuntu and macOS, not just the Windows machine it was built on. Not yet built: posting scanning
+and staging, cover letters, blank starter templates for your own data, agent instructions
+(Claude Code / Cursor / ChatGPT), and pluggable posting extractors for sites beyond a plain
+saved HTML page. Tracked as milestones in this repo's issues.
+
+## Running tests
+
+```bash
+pip install -r requirements-dev.txt
+python3 -m pytest tests/
+```
+
+Pure-Python, no browser or Node.js needed — covers `build_cv.py` (golden-file diff against
+`examples/demo/expected/`), `check_cv.py` (broken-spine fixtures, coverage math), and
+`audit_public.py`/`sync.sh` (leak-gate fixtures, plus an end-to-end check that a root's private
+content never enters `sync.sh push`'s scanned or copied file list).
 
 ## Config
 

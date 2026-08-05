@@ -76,8 +76,9 @@ ABS_PATH_RE = re.compile(r"[Cc]:\\|/c/Users/|/Users/[A-Za-z]|/home/[A-Za-z]")
 # This file's own source necessarily contains the literal patterns above (they're what it's
 # built to detect) — the content-based checks (email/phone/absolute-path/private-terms) would
 # otherwise flag audit_public.py itself. Binary and forbidden-prefix checks still apply; those
-# have no such false-positive risk.
-CONTENT_CHECK_SELF_EXCLUDE = {"scripts/audit_public.py"}
+# have no such false-positive risk. tests/test_audit_public.py has the same problem for the same
+# reason: its fixtures are deliberately-fake examples of exactly what these checks detect.
+CONTENT_CHECK_SELF_EXCLUDE = {"scripts/audit_public.py", "tests/test_audit_public.py"}
 
 TEXT_READ_ERRORS = (UnicodeDecodeError,)
 

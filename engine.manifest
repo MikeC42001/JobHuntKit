@@ -22,8 +22,10 @@ templates/
 agents/
 docs/
 examples/
+tests/
 .claude/
 .cursor/
+.github/
 demo.sh
 README.md
 LICENSE
@@ -31,6 +33,7 @@ NOTICE
 CONTRIBUTING.md
 AGENTS.md
 config.example.json
+requirements-dev.txt
 engine.manifest
 .private-terms.example
 .gitignore
