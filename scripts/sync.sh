@@ -95,7 +95,12 @@ manifest_files_under() {
 
 if [ "$MODE" = "push" ]; then
   echo "sync.sh: auditing $SRC before push..."
-  mapfile -t AUDIT_FILES < <(manifest_files_under "$SRC")
+  # Not `mapfile` — that's bash 4+ only, and macOS ships bash 3.2 by default (Apple stopped
+  # updating it over the GPLv3 license change), so this needs to stay portable.
+  AUDIT_FILES=()
+  while IFS= read -r f; do
+    AUDIT_FILES+=("$f")
+  done < <(manifest_files_under "$SRC")
   if [ "${#AUDIT_FILES[@]}" -eq 0 ]; then
     echo "sync.sh: no manifest paths found under $SRC — nothing to push." >&2
     exit 1
