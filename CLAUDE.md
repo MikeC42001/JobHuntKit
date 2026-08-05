@@ -27,7 +27,7 @@ master. `engine/build_cv.py` assembles the three into `cv-minimal.md`; `engine/c
 validates the locked spine landed correctly and reports coverage; `engine/render_cv_minimal.sh`
 renders it to PDF; `engine/verify_cvs.py` gates page count.
 
-## Current state (M0 complete; M1 complete, 2026-08-05)
+## Current state (M0 + M1 complete and merged to `dev`, 2026-08-05)
 
 Working end-to-end: clone → `bash demo.sh` → build → validate → render → verify → one-page PDF,
 now genuinely cross-platform-verified — the `render-matrix` CI job (PR #1, 2026-08-05) runs
@@ -94,8 +94,8 @@ distro installed), not Git Bash — test-harness-only, doesn't affect a real use
 inside Git Bash. Fixing `bash_executable()`'s literal Git-for-Windows path also required adding
 an `ABS_PATH_ALLOWLIST_PREFIXES` escape hatch to `audit_public.py`'s own absolute-path check —
 generic Program Files install paths, no personal data, but still Windows-drive-letter-shaped.
-All 6 CI jobs (lint, 3× test, 2× render-matrix) green after the fix. On `feat/m1-tests-ci`, not
-yet merged to `dev`.
+All 6 CI jobs (lint, 3× test, 2× render-matrix) green. Merged to `dev` via PR #1
+(`feat/m1-tests-ci`, merge commit not squash, matching this project's convention).
 
 **Not yet built** (see the plan file this session produced, in this machine's
 `~/.claude/plans/` history, for the full M1–M4 breakdown):
