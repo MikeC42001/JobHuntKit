@@ -30,9 +30,12 @@ renders it to PDF; `engine/verify_cvs.py` gates page count.
 ## Current state (M0 complete; M1 complete, 2026-08-05)
 
 Working end-to-end: clone → `bash demo.sh` → build → validate → render → verify → one-page PDF,
-cross-platform-safe (macOS/Linux fixes in `engine/lib.sh` are code-reviewed and only tested live
-on Windows so far — the new `render-matrix` CI job runs `demo.sh` on ubuntu/macos too, but only
-once `feat/m1-tests-ci` is pushed and CI actually runs). Demo persona "Robin Vale" (`examples/demo/`) is entirely
+now genuinely cross-platform-verified — the `render-matrix` CI job (PR #1, 2026-08-05) runs
+`demo.sh` on ubuntu-latest and macos-latest, not just code-reviewed. That first real run failed
+on three real bugs (`mapfile` missing on macOS's bash 3.2, headless Chromium needing
+`--no-sandbox` under CI on ubuntu even as non-root, and a test-harness-only Windows bash
+resolution issue) — all fixed same-session, all 6 CI jobs (lint, 3× test, 2× render-matrix) now
+green. Demo persona "Robin Vale" (`examples/demo/`) is entirely
 fictional, applying to a fictional "Orbital Dynamics." Golden-file
 (`examples/demo/expected/cv-minimal.md`) and rendered output
 (`examples/demo/output/cv-minimal.{pdf,png}`) are committed. Pushed to GitHub (private)
@@ -77,9 +80,22 @@ audit's file list or a push destination, and a leaked email aborts the push with
 `tests/test_audit_public.py` was added to `audit_public.py`'s `CONTENT_CHECK_SELF_EXCLUDE`
 (same reason as `audit_public.py` itself — its fixtures are deliberately-fake trigger patterns).
 `.github/workflows/ci.yml`: `ruff` lint, pytest on ubuntu/macos/windows, and a `render-matrix`
-job (ubuntu/macos, via `browser-actions/setup-chrome`) that runs the real `demo.sh` — first
-cross-platform signal for `lib.sh`'s fixes beyond Windows. `tests/`, `.github/`, and
-`requirements-dev.txt` added to `engine.manifest`. On `feat/m1-tests-ci`, not yet merged to `dev`.
+job (ubuntu/macos, via `browser-actions/setup-chrome`) that runs the real `demo.sh`. `tests/`,
+`.github/`, and `requirements-dev.txt` added to `engine.manifest`.
+
+**First CI run found 3 real cross-platform bugs (2026-08-05, PR #1):** `scripts/sync.sh` used
+`mapfile`, a bash-4+ builtin absent from macOS's default bash 3.2 — every push silently failed
+to build its audit file list there. `engine/lib.sh`'s `browser_flags()` only added
+`--no-sandbox` under root, but GitHub Actions' ubuntu runners restrict the sandbox helper for
+non-root users too, crashing headless Chromium (SIGABRT) — fixed by also checking `$CI=true`.
+And `tests/conftest.py`'s new `bash_executable()` helper was needed because spawning `"bash"`
+from Python on windows-latest CI resolves to Windows' own WSL launcher stub (errors out with no
+distro installed), not Git Bash — test-harness-only, doesn't affect a real user already running
+inside Git Bash. Fixing `bash_executable()`'s literal Git-for-Windows path also required adding
+an `ABS_PATH_ALLOWLIST_PREFIXES` escape hatch to `audit_public.py`'s own absolute-path check —
+generic Program Files install paths, no personal data, but still Windows-drive-letter-shaped.
+All 6 CI jobs (lint, 3× test, 2× render-matrix) green after the fix. On `feat/m1-tests-ci`, not
+yet merged to `dev`.
 
 **Not yet built** (see the plan file this session produced, in this machine's
 `~/.claude/plans/` history, for the full M1–M4 breakdown):
