@@ -26,7 +26,7 @@ master. `engine/build_cv.py` assembles the three into `cv-minimal.md`; `engine/c
 validates the locked spine landed correctly and reports coverage; `engine/render_cv_minimal.sh`
 renders it to PDF; `engine/verify_cvs.py` gates page count.
 
-## Current state (M0 + M1 merged to `dev`; M2 complete on `feat/m2-onboarding`, 2026-08-06)
+## Current state (M0-M2 merged to `dev`; M3 complete on `feat/m3-full-loop`, 2026-08-06)
 
 Working end-to-end: clone → `bash demo.sh` → build → validate → render → verify → one-page PDF,
 now genuinely cross-platform-verified — the `render-matrix` CI job (PR #1, 2026-08-05) runs
@@ -130,15 +130,51 @@ the manifest, `sync.sh`, `demo.sh`, or CI were needed. `main` still untouched (M
 the new docs, not bundled into this branch). `agents/cv-tailor.md` moved to M3 — it wraps
 `scan_applications.py`/`collect_cvs.py`, neither of which exists yet.
 
-**Not yet built** (M3–M4, full breakdown in this machine's `~/.claude/plans/` history — the
-original M0–M4 design doc and this session's M2 plan file):
-- `agents/cv-tailor.md` (port of `/job-hunt`) + a generated ChatGPT-paste variant
-  (`scripts/build_paste_prompts.py`)
-- `scan_applications.py`, `collect_cvs.py`, `collect_letters.py`, cover-letter rendering
-- `engine/extractors/` — pluggable posting extraction (LinkedIn/Greenhouse/Lever/Workday/Indeed),
-  a registry + confidence-based dispatch, so adding a new job board is a self-contained
-  contribution rather than a rewrite of one fixed script
+**M3 (the full loop) complete on `feat/m3-full-loop`, 2026-08-06:** `engine/scan_applications.py`
+classifies every company as NEW/INCOMPLETE/CURRENT/STALE/ERROR plus independent CV/letter sent/
+declined/pending state, reusing `build_cv.build_company()`'s diff mode directly rather than
+reimplementing staleness detection. `engine/collect_cvs.py`/`engine/collect_letters.py` stage
+rendered PDFs into `produced/to_send/` — the CV collector's `--force` semantics preserved exactly
+(never narrows the run, only decides whether already-sent companies get re-copied), the letter
+collector deliberately one-company-per-run with no bulk mode. Cover letters render via
+`engine/render_letter.sh` (mirrors `render_cv_minimal.sh`'s structure, no `--photo`/`--style` — a
+letter has neither) and `engine/render-support/letter2html.js`, a **tracked** file this time
+(the private version's heredoc-rewrite-on-every-run is exactly why it drifted there);
+`engine/md_to_email_txt.py` flattens a letter into paste-ready plain text. `demo.sh` grew a fifth
+step rendering `examples/demo`'s (previously unrendered) `cover_letter.md`, so CI's cross-platform
+`render-matrix` job now exercises the letter renderer on ubuntu/macOS from the first push.
+
+`engine/extractors/` is a small registry (`base.py`'s `PostingDraft`/`Extractor` protocol,
+`generic.py` the always-matches fallback, `plaintext.py` for `.txt`/pasted text, `linkedin.py` for
+job-details pages) behind a thin `engine/extract_posting.py` CLI (`--extractor` to force one,
+`--list-extractors`, `--url`). `linkedin.py` **refuses** a saved feed-card/search-results page
+with an actionable error instead of emitting empty content — the concrete fix for a real failure
+mode already hit in the private pipeline this was ported from. `docs/EXTRACTORS.md` is the
+how-to; Greenhouse/Lever/Workday/Indeed are filed as `good first issue`s rather than built here,
+deliberately — a clean plugin API with an open contribution path is a stronger signal than
+hand-writing DOM fingerprints for boards with no real postings to test against.
+
+`agents/cv-tailor.md` (port of `/job-hunt`) wires all of it together — the 7-branch argument
+ladder, render-only mode, and Steps 1–7 (scan → intake → draft → build+validate with zero SILENT
+as the bar → render+verify → stage → report) carry over intact; a new Step 6b offers an optional,
+never-automatic cover-letter draft per company, which the private command never had. Adapters
+(`.claude/skills/cv-tailor/`, `.claude/commands/cv-tailor.md`, `AGENTS.md`, `.cursor/rules/`)
+match the `cv-setup` pattern from M2. 45 new tests (85 total), `ruff` clean, `demo.sh` clean
+end-to-end. `main` still untouched — **merge to `main`, the `v0.1.0` tag, and the public-
+visibility flip are now deliberately deferred until M4 is complete** (not just M3), a scope
+decision made explicitly this session, superseding the earlier plan to decide right after M2.
+
+**Not yet built** (M4, full breakdown in this machine's `~/.claude/plans/` history — the
+original M0–M4 design doc):
+- Extractors for Greenhouse, Lever, Workday, Indeed (open `good first issue`s, see
+  `docs/EXTRACTORS.md`)
+- `scripts/build_paste_prompts.py` — a generated ChatGPT-paste variant of the agent instructions
 - `templates/minimal-lean.md` (roomier spine-only variant)
+- `CHANGELOG.md`, the `v0.1.0` tag, GitHub topics/description/social preview, README badges
+- Posting-change detection (re-fetching/diffing a live posting after it's saved) — a genuine gap
+  in both the public and private pipelines, not scoped to any milestone yet
+- Optionally, the first `sync.sh pull` into the private `job-hunt/` folder, to prove the
+  mechanism round-trips
 
 ## Relationship to the private `job-hunt/` folder
 
@@ -158,4 +194,4 @@ safe — actually doing that migration is still M4, deliberately last.
 
 ---
 
-> Last updated: 2026-08-06 (M2 onboarding session)
+> Last updated: 2026-08-06 (M3 full-loop session)
