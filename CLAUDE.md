@@ -1,9 +1,8 @@
 # JobHuntKit
 
 **Description:** Open-source toolkit that generates tailored, one-page CVs per job posting from
-a tagged master CV + a per-posting selection file. Extracted and genericized from Miguel's
-private `job-hunt/` pipeline (in the Projetos meta-repo) — that private folder is never touched,
-moved, or migrated by this project; see `[[project_jobhuntkit]]` in MEMORY.md for the split.
+a tagged master CV + a per-posting selection file. Extracted and genericized from a private CV
+pipeline — that private source is never touched, moved, or migrated by this project.
 
 **Collaborators:** Solo (MC)
 **GitHub:** `MikeC42001/JobHuntKit`, **private** (started private deliberately, 2026-08-04 — flip
