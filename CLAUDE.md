@@ -27,7 +27,7 @@ master. `engine/build_cv.py` assembles the three into `cv-minimal.md`; `engine/c
 validates the locked spine landed correctly and reports coverage; `engine/render_cv_minimal.sh`
 renders it to PDF; `engine/verify_cvs.py` gates page count.
 
-## Current state (M0 + M1 complete and merged to `dev`, 2026-08-05)
+## Current state (M0 + M1 merged to `dev`; M2 complete on `feat/m2-onboarding`, 2026-08-06)
 
 Working end-to-end: clone → `bash demo.sh` → build → validate → render → verify → one-page PDF,
 now genuinely cross-platform-verified — the `render-matrix` CI job (PR #1, 2026-08-05) runs
@@ -97,15 +97,49 @@ generic Program Files install paths, no personal data, but still Windows-drive-l
 All 6 CI jobs (lint, 3× test, 2× render-matrix) green. Merged to `dev` via PR #1
 (`feat/m1-tests-ci`, merge commit not squash, matching this project's convention).
 
-**Not yet built** (see the plan file this session produced, in this machine's
-`~/.claude/plans/` history, for the full M1–M4 breakdown):
-- Blank starter `templates/` for a real user's own data, `docs/{GETTING-STARTED,SPEC,NO-AI,CONFIG}.md`
-- Agent instructions (`agents/CONTEXT.md`, `cv-setup.md`, `cv-tailor.md`) + Claude Code skills,
-  Cursor rules, and a generated ChatGPT-paste variant
+**M2 (onboarding) complete, 2026-08-06, on `feat/m2-onboarding`:** blank starter `templates/`
+(`master_cv_minimal.md`, `minimal-full.md`, `application.md`, `background.md`, `CV_SPEC.md`,
+`applications-README.md`) — the starter master and starter template deliberately share a
+consistent, non-numbered `@id` naming (`edu-degree`, `exp-previous-role`, `exp-current-role`,
+`proj-example`, `exp-optional`, `vol-example`, plus the five `header-*` ids and the two bare
+locked lines) so `build_cv.py --all` succeeds on a totally fresh root with zero edits — verified
+end-to-end, not assumed. `scripts/init_workspace.py` scaffolds a data root from those templates:
+default root is the checkout itself (matches `config.py`'s existing fallback), `--root` for
+anywhere else; skip-existing by default so no flag can ever clobber a real master CV, `--force`
+re-copies only the engine-owned CV template(s); refuses a walk-up match onto an unrelated
+directory that merely has *a* `config.json` nearby with none of this toolkit's shape. Caught one
+real gap while designing it: `images/` wasn't gitignored and wasn't in `audit_public.py`'s
+`FORBIDDEN_PREFIXES` (a scaffolded photo would only have been caught incidentally by the
+binary-extension check) — fixed by anchoring `/images/` in `.gitignore`, verified
+`examples/demo/images/avatar.png` stays tracked. 10 new tests (`tests/test_init_workspace.py`)
+including a subprocess-driven end-to-end run (`init_workspace.py` → `build_cv.py --all` →
+`check_cv.py`) asserting the NOT CONFIGURED banner is a real no-op success and not a
+false-passing "companies OK", and a `git check-ignore`-based test pinning the safety property the
+default root relies on rather than trusting it. `docs/{SPEC,GETTING-STARTED,CONFIG,NO-AI}.md`
+and `CONTRIBUTING.md` written by cannibalizing the private `job-hunt/README.md` +
+`job-hunt/cv/CV_SPEC.md` (read-only sources, never touched) — every personal number, employer
+name, and dated incident stripped; the 12-rule renderer-compatibility contract and the full
+placeholder grammar ported near-verbatim since they were already generic. Agent layer:
+`agents/CONTEXT.md` (shared root-probe + file-ownership preamble) and `agents/cv-setup.md` (port
+of `/job-hunt-rd`, already the most portable of the private commands) + thin pointer adapters
+(`.claude/skills/cv-setup/SKILL.md`, `.claude/commands/cv-setup.md`, `.cursor/rules/jobhuntkit.mdc`,
+root `AGENTS.md`) — one source of truth, no copies. `engine.manifest` already forward-declared
+every new path (`templates/`, `docs/`, `agents/`, `.claude/`, `.cursor/`, `AGENTS.md`,
+`CONTRIBUTING.md`), and `scripts/sync.sh` expands directories recursively, so **no changes** to
+the manifest, `sync.sh`, `demo.sh`, or CI were needed. `main` still untouched (M2's `v0.1.0` tag,
+`main` merge, and the public-visibility flip are a deliberately separate decision after reading
+the new docs, not bundled into this branch). `agents/cv-tailor.md` moved to M3 — it wraps
+`scan_applications.py`/`collect_cvs.py`, neither of which exists yet.
+
+**Not yet built** (M3–M4, full breakdown in this machine's `~/.claude/plans/` history — the
+original M0–M4 design doc and this session's M2 plan file):
+- `agents/cv-tailor.md` (port of `/job-hunt`) + a generated ChatGPT-paste variant
+  (`scripts/build_paste_prompts.py`)
 - `scan_applications.py`, `collect_cvs.py`, `collect_letters.py`, cover-letter rendering
 - `engine/extractors/` — pluggable posting extraction (LinkedIn/Greenhouse/Lever/Workday/Indeed),
   a registry + confidence-based dispatch, so adding a new job board is a self-contained
   contribution rather than a rewrite of one fixed script
+- `templates/minimal-lean.md` (roomier spine-only variant)
 
 ## Relationship to the private `job-hunt/` folder
 
@@ -125,4 +159,4 @@ safe — actually doing that migration is still M4, deliberately last.
 
 ---
 
-> Last updated: 2026-08-05 (tests/ + CI session)
+> Last updated: 2026-08-06 (M2 onboarding session)

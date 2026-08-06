@@ -54,40 +54,31 @@ silently overwrites your change.
 
 ## Quickstart with your own data
 
-Blank starter templates and a guided setup flow are on the roadmap (see Status below); for now,
-`examples/demo/` is also the fastest way to start your own — it's a complete, working root, so
-copying it and replacing the content is a working starting point today:
-
 ```bash
-cp -r examples/demo my-cv-data
-cd my-cv-data
-$EDITOR config.json                        # your name, contact prefix, photo, locked spine
-$EDITOR master/master_cv_minimal.md         # your own @id-tagged background
-$EDITOR templates/minimal-full.md           # only if you need slots the demo doesn't have
-# replace applications/offer-pages/Orbital Dynamics/ with your own applications/offer-pages/<Company>/
-cd ..
-python3 engine/build_cv.py --root my-cv-data "my-cv-data/applications/offer-pages/<Company>"
-python3 engine/check_cv.py --root my-cv-data     # confirms your locked spine actually landed
-bash engine/render_cv_minimal.sh --root my-cv-data "my-cv-data/applications/offer-pages/<Company>/cv-minimal.md"
-python3 engine/verify_cvs.py --root my-cv-data
+python scripts/init_workspace.py    # scaffolds config.json, master/, profile/, applications/
 ```
+
+Fill in `config.json`, `profile/background.md`, and `master/master_cv_minimal.md`, decide your
+locked spine, then build/validate/render/verify the same way `demo.sh` does. Full walkthrough,
+in order: **[docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)**.
 
 `--root` can point anywhere, including outside this checkout entirely — your own private repo,
 for instance — so the engine never needs to touch your data directly:
 
 ```bash
+python3 scripts/init_workspace.py --root ~/my-cv-data
 python3 engine/build_cv.py --root ~/my-cv-data --all
 ```
 
-The `@id` marker rules, the `{{...}}` placeholder grammar, and the locked-vs-optional spine
-concept are documented inline in `examples/demo/templates/minimal-full.md`'s header comment and
-`examples/demo/master/CV_SPEC.md` — read those before writing your own until the standalone docs
-land.
+Format contract (`@id` marker rules, `{{...}}` placeholder grammar, the locked-vs-optional spine
+concept): [docs/SPEC.md](docs/SPEC.md). Every `config.json` key: [docs/CONFIG.md](docs/CONFIG.md).
+Running the whole pipeline by hand, no agent involved: [docs/NO-AI.md](docs/NO-AI.md).
 
 ## Scripts
 
 | Script | Does |
 |---|---|
+| `scripts/init_workspace.py` | Scaffolds a fresh data root from `templates/` — config.json, master/, profile/, applications/ |
 | `engine/build_cv.py` | Assembles `cv-minimal.md` from the master + template + `application.md` |
 | `engine/check_cv.py` | Validates the locked spine landed correctly (`structure`, the default) and reports what's present/omitted/silently-missing per application (`--coverage`) |
 | `engine/verify_cvs.py` | Confirms a rendered PDF is exactly one page (or whatever `limits.max_pages` says) |
@@ -96,19 +87,23 @@ land.
 
 ## Status
 
-Working: build, validate (structure + coverage), render, verify — on a fictional demo persona,
-cross-platform. `check_cv.py`'s locked spine, education requirements, and verbatim-line checks
-are entirely `config.json`-driven; a fresh clone with nothing configured prints a clear
-"not configured" message rather than a false "all OK". A leak gate (`scripts/audit_public.py`)
-and a manifest-bounded sync mechanism (`engine.manifest` + `scripts/sync.sh`) are also in —
-`bash scripts/install_hooks.sh` wires the same check into a pre-commit hook. A pytest suite
-covers the golden build, the structure/coverage checkers, and the leak gate (see Running tests
-below), and CI (`.github/workflows/ci.yml`) runs it on every push — lint, the pytest suite on
+Working: build, validate (structure + coverage), render, verify, and now onboarding — blank
+starter templates, `scripts/init_workspace.py`, the published format contract
+(`docs/SPEC.md`/`docs/CONFIG.md`/`docs/GETTING-STARTED.md`/`docs/NO-AI.md`), and portable agent
+instructions (`agents/CONTEXT.md` + `agents/cv-setup.md`, wired up as a Claude Code skill/command
+and a Cursor rule) — all cross-platform. `check_cv.py`'s locked spine, education requirements,
+and verbatim-line checks are entirely `config.json`-driven; a fresh root with nothing configured
+prints a clear "not configured" message rather than a false "all OK". A leak gate
+(`scripts/audit_public.py`) and a manifest-bounded sync mechanism (`engine.manifest` +
+`scripts/sync.sh`) are also in — `bash scripts/install_hooks.sh` wires the same check into a
+pre-commit hook. A pytest suite covers the golden build, the structure/coverage checkers, the
+leak gate, and the scaffolding script (see Running tests below), and CI
+(`.github/workflows/ci.yml`) runs it on every push — lint, the pytest suite on
 ubuntu/macos/windows, and a render-matrix job proving `demo.sh` actually works end-to-end on
 ubuntu and macOS, not just the Windows machine it was built on. Not yet built: posting scanning
-and staging, cover letters, blank starter templates for your own data, agent instructions
-(Claude Code / Cursor / ChatGPT), and pluggable posting extractors for sites beyond a plain
-saved HTML page. Tracked as milestones in this repo's issues.
+and staging, cover letters, the `cv-tailor` agent instruction (needs those first), and pluggable
+posting extractors for sites beyond a plain saved HTML page. Tracked as milestones in this
+repo's issues.
 
 ## Running tests
 
@@ -140,6 +135,12 @@ At minimum you'll want `person.name`, `person.file_prefix`, and optionally `rend
 The engine (`engine/`) never contains personal data — everything you write lives in a data
 root that's resolved at runtime (`--root`, `$JOBHUNTKIT_ROOT`, or this checkout by default).
 Nothing in this repo's history, other than the fictional demo persona, is real.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) — the short version: never commit real CV data, run
+`bash scripts/install_hooks.sh` once per clone, and `python -m pytest tests/` +
+`ruff check engine scripts tests` before a PR.
 
 ## License
 
