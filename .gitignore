@@ -3,12 +3,14 @@
 /.private-terms
 
 # Your own data, if you run the toolkit from inside this checkout (root = repo root).
-# examples/demo/config.json is a tracked exception — it's part of the shipped demo, not user data.
+# examples/demo/config.json (and its images/profile/master/applications/) is a tracked exception
+# — it's part of the shipped demo, not user data.
 /config.json
 /profile/
 /master/
 /applications/
 /produced/
+/images/
 /workspace/
 
 # Rendered output is a build artifact everywhere except the one committed demo hero image.

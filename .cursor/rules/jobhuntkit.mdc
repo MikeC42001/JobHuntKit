@@ -1,0 +1,19 @@
+---
+description: JobHuntKit root-finding, file ownership, and agent instructions
+globs:
+alwaysApply: true
+---
+
+This repo follows the agent conventions in [agents/CONTEXT.md](../../agents/CONTEXT.md) — read
+it first for root-finding (locate `config.json` + sibling `engine/build_cv.py`; if missing, run
+`python scripts/init_workspace.py`), which files an agent may write, and the never-auto-commit
+rule.
+
+For setting up or evolving CV content (`profile/background.md`,
+`master/master_cv_minimal.md`), follow [agents/cv-setup.md](../../agents/cv-setup.md).
+
+For the `application.md`/template/master format contract, see
+[docs/SPEC.md](../../docs/SPEC.md). For `config.json`, see
+[docs/CONFIG.md](../../docs/CONFIG.md).
+
+This file is a pointer, not a copy — if it looks stale, the files above are the source of truth.
