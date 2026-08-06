@@ -12,6 +12,9 @@ rule.
 For setting up or evolving CV content (`profile/background.md`,
 `master/master_cv_minimal.md`), follow [agents/cv-setup.md](../../agents/cv-setup.md).
 
+For tailoring a CV to a specific posting — scan, draft, build, validate, render, and stage,
+plus an optional cover letter — follow [agents/cv-tailor.md](../../agents/cv-tailor.md).
+
 For the `application.md`/template/master format contract, see
 [docs/SPEC.md](../../docs/SPEC.md). For `config.json`, see
 [docs/CONFIG.md](../../docs/CONFIG.md).
