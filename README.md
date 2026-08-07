@@ -79,10 +79,16 @@ Running the whole pipeline by hand, no agent involved: [docs/NO-AI.md](docs/NO-A
 | Script | Does |
 |---|---|
 | `scripts/init_workspace.py` | Scaffolds a fresh data root from `templates/` — config.json, master/, profile/, applications/ |
+| `engine/scan_applications.py` | Classifies every company as NEW/CURRENT/STALE/SENT/DECLINED, independently for the CV and the cover letter |
+| `engine/extract_posting.py` | Turns a saved job-posting page (or `.txt`/pasted text) into a skimmable dump, via the pluggable `engine/extractors/` registry — see `docs/EXTRACTORS.md` |
 | `engine/build_cv.py` | Assembles `cv-minimal.md` from the master + template + `application.md` |
 | `engine/check_cv.py` | Validates the locked spine landed correctly (`structure`, the default) and reports what's present/omitted/silently-missing per application (`--coverage`) |
 | `engine/verify_cvs.py` | Confirms a rendered PDF is exactly one page (or whatever `limits.max_pages` says) |
 | `engine/render_cv_minimal.sh` | Renders `cv-minimal.md` to a one-column PDF with a circular photo |
+| `engine/render_letter.sh` | Renders `cover_letter.md` to a clean, prose-only PDF |
+| `engine/md_to_email_txt.py` | Flattens a hand-wrapped cover letter into paste-ready plain email text |
+| `engine/collect_cvs.py` | Stages rendered CVs into `produced/to_send/` for review |
+| `engine/collect_letters.py` | Same, for one cover letter at a time — no bulk mode, by design |
 | `engine/lib.sh` | Shared cross-platform browser discovery, sourced by the renderers |
 
 ## Status
@@ -96,13 +102,18 @@ and verbatim-line checks are entirely `config.json`-driven; a fresh root with no
 prints a clear "not configured" message rather than a false "all OK". A leak gate
 (`scripts/audit_public.py`) and a manifest-bounded sync mechanism (`engine.manifest` +
 `scripts/sync.sh`) are also in — `bash scripts/install_hooks.sh` wires the same check into a
-pre-commit hook. A pytest suite covers the golden build, the structure/coverage checkers, the
-leak gate, and the scaffolding script (see Running tests below), and CI
-(`.github/workflows/ci.yml`) runs it on every push — lint, the pytest suite on
+pre-commit hook. Now also in: the full loop — `scan_applications.py` (what needs attention),
+`extract_posting.py` + a pluggable `engine/extractors/` registry (`linkedin`, `plaintext`,
+`generic` today; `docs/EXTRACTORS.md` is the how-to for adding one), `collect_cvs.py`/
+`collect_letters.py` (staging finished PDFs for review), cover letters (`render_letter.sh`,
+`md_to_email_txt.py`), and `agents/cv-tailor.md` wiring all of it into one agent-driven pass. A
+pytest suite covers the golden build, the structure/coverage checkers, the leak gate, the
+scaffolding script, the scan/collect/extractor logic, and the email flattener (see Running tests
+below), and CI (`.github/workflows/ci.yml`) runs it on every push — lint, the pytest suite on
 ubuntu/macos/windows, and a render-matrix job proving `demo.sh` actually works end-to-end on
-ubuntu and macOS, not just the Windows machine it was built on. Not yet built: posting scanning
-and staging, cover letters, the `cv-tailor` agent instruction (needs those first), and pluggable
-posting extractors for sites beyond a plain saved HTML page. Tracked as milestones in this
+ubuntu and macOS, not just the Windows machine it was built on. Not yet built: extractors for
+Greenhouse/Lever/Workday/Indeed (filed as `good first issue`s), a generated ChatGPT-paste variant
+of the agent instructions, and a roomier spine-only template. Tracked as milestones in this
 repo's issues.
 
 ## Running tests

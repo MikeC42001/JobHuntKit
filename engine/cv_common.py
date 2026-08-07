@@ -28,6 +28,15 @@ def display_name(cfg, company):
     return cfg.display_names.get(company, company.replace(" ", "_"))
 
 
+def to_send_dir(cfg):
+    return os.path.join(cfg.produced_dir, "to_send")
+
+
+def to_send_pdf_path(cfg, company, prefix=None):
+    prefix = prefix or cfg.file_prefix
+    return os.path.join(to_send_dir(cfg), f"{prefix}_{display_name(cfg, company)}.pdf")
+
+
 def sent_pdf_path(cfg, company, prefix=None):
     prefix = prefix or cfg.file_prefix
     return os.path.join(cfg.produced_dir, "sent", f"{prefix}_{display_name(cfg, company)}.pdf")

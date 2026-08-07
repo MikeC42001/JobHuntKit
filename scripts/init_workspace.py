@@ -56,15 +56,17 @@ STARTER_FILES = [
 EXAMPLE_COMPANY = "Example Company"
 EXAMPLE_COMPANY_SOURCE = "templates/application.md"
 
-# Created empty. produced/sent/ and produced/not_sent/ are the exact paths a future collect
-# script (M3) computes for the "move the PDF to mark it sent" convention — creating them now
-# makes that convention visible/self-documenting from the very first run.
+# Created empty. produced/to_send/, produced/sent/, and produced/not_sent/ are the exact paths
+# collect_cvs.py/collect_letters.py (M3) compute for staging and for the "move the PDF to mark
+# it sent/declined" convention — creating them now makes that convention visible/self-documenting
+# from the very first run.
 EMPTY_DIRS = [
     "master",
     "profile",
     "templates",
     "images",
     os.path.join("applications", "offer-pages"),
+    os.path.join("produced", "to_send"),
     os.path.join("produced", "sent"),
     os.path.join("produced", "not_sent"),
 ]

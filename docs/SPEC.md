@@ -125,6 +125,33 @@ role: <Role>
   reason. `check_cv.py --coverage` reports anything missing *without* an `## Omit` entry as
   SILENT — that's the signal something was forgotten rather than decided.
 
+## Cover letters — a different shape entirely
+
+`cover_letter.md` has no `@id` scheme, no template, and nothing generates it — it's a hand-
+written source file, not a build artifact, the one exception to "everything under a company
+folder except application.md is generated." Structure by convention, not enforced by a parser:
+
+```
+Dear <Company> team,
+
+<2-4 body paragraphs>
+
+<closing line>
+
+Best regards,
+<Name>
+<contact line>
+
+---
+<anything here — draft notes, review reminders — is stripped before rendering>
+```
+
+`engine/render_letter.sh` (via `render-support/letter2html.js`) applies exactly two mechanical
+rules: everything from a lone `---` line onward is cut, and the final paragraph (the signature
+block) is rendered with real line breaks between its lines instead of collapsing into one run-on
+line the way plain markdown treats a single-newline-separated paragraph. No `{{...}}` tokens, no
+`@id` markers — write it as you'd write the letter.
+
 ## Renderer compatibility contract
 
 `build_cv.py` must emit output the renderer (`cv2html-minimal.js`) reads correctly. Violating

@@ -50,9 +50,10 @@ boundary in mind for any change — a new script should take `--root` via
 
 ## What's a good first contribution
 
-- A posting extractor for a job board not yet supported (once `engine/extractors/` lands —
-  see the roadmap in `README.md`'s Status section). Small, self-contained, ships with its own
-  synthetic fixture.
+- A posting extractor for a job board not yet supported — `engine/extractors/` is in, with
+  `linkedin`/`plaintext`/`generic` shipped; Greenhouse, Lever, Workday, and Indeed are open
+  `good first issue`s. See `docs/EXTRACTORS.md` for the how-to. Small, self-contained, ships with
+  its own synthetic fixture.
 - A renderer or cross-platform fix — `engine/lib.sh` is the shared cross-platform layer; a bug
   report with the exact OS/browser combination is just as valuable as a fix.
 - A docs fix. `docs/GETTING-STARTED.md` is meant to work for a stranger with zero context; if a
