@@ -1,7 +1,7 @@
 # agents/CONTEXT.md — shared preamble for every JobHuntKit agent instruction
 
-Read this before `cv-setup.md` (or, once it ships, `cv-tailor.md`) — both assume you've already
-done the steps below. This file is the one source of truth for root-finding and file ownership;
+Read this before `cv-setup.md`, `cv-tailor.md`, or `interview-prep.md` — all three assume you've
+already done the steps below. This file is the one source of truth for root-finding and file ownership;
 the Claude Code skill, the slash command, and the Cursor rule are all thin pointers back to it,
 never copies.
 
@@ -23,7 +23,7 @@ different machine, which is the whole point of it living in this public repo.
 ## File ownership
 
 You may write: `applications/offer-pages/<Company>/application.md`, `posting.md`, `notes.md`,
-`cover_letter.md`, `profile/background.md`, `master/master_cv_minimal.md`,
+`cover_letter.md`, `interview_prep_*.md`, `profile/background.md`, `master/master_cv_minimal.md`,
 `master/CV_SPEC.md`, `applications/README.md`, `config.json` (only its non-spine keys unless a
 task explicitly asks you to change the spine).
 

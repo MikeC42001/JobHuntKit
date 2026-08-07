@@ -15,6 +15,9 @@ For setting up or evolving CV content (`profile/background.md`,
 For tailoring a CV to a specific posting — scan, draft, build, validate, render, and stage,
 plus an optional cover letter — follow [agents/cv-tailor.md](../../agents/cv-tailor.md).
 
+For prepping and rehearsing an upcoming interview for an application already in this root —
+follow [agents/interview-prep.md](../../agents/interview-prep.md).
+
 For the `application.md`/template/master format contract, see
 [docs/SPEC.md](../../docs/SPEC.md). For `config.json`, see
 [docs/CONFIG.md](../../docs/CONFIG.md).
