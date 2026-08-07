@@ -26,7 +26,7 @@ master. `engine/build_cv.py` assembles the three into `cv-minimal.md`; `engine/c
 validates the locked spine landed correctly and reports coverage; `engine/render_cv_minimal.sh`
 renders it to PDF; `engine/verify_cvs.py` gates page count.
 
-## Current state (M0-M2 merged to `dev`; M3 complete on `feat/m3-full-loop`, 2026-08-06)
+## Current state (M0-M3 merged to `dev` via PR #1, 2026-08-07)
 
 Working end-to-end: clone → `bash demo.sh` → build → validate → render → verify → one-page PDF,
 now genuinely cross-platform-verified — the `render-matrix` CI job (PR #1, 2026-08-05) runs
@@ -164,6 +164,16 @@ end-to-end. `main` still untouched — **merge to `main`, the `v0.1.0` tag, and 
 visibility flip are now deliberately deferred until M4 is complete** (not just M3), a scope
 decision made explicitly this session, superseding the earlier plan to decide right after M2.
 
+**M3 merged to `dev` via PR #1, 2026-08-07** (merge commit, not squash, matching this project's
+convention). Same session: added a fourth agent skill, `interview-prep`
+(`agents/interview-prep.md` + `.claude/skills/interview-prep/`, `.claude/commands/interview-prep.md`,
+a Cursor-rule line, `agents/CONTEXT.md`'s file-ownership list extended for `interview_prep_*.md`)
+— outside the original M0-M4 scope (that scope is the CV-generation loop specifically), added
+because the underlying workflow (prep doc + a live mock-Q&A pass that catches contradictions
+against what was already written, factual drift, vague self-praise, and unprofessional framing)
+was exercised and validated in the private `job-hunt/` folder first, same pattern as every other
+agent skill here.
+
 **Not yet built** (M4, full breakdown in this machine's `~/.claude/plans/` history — the
 original M0–M4 design doc):
 - Extractors for Greenhouse, Lever, Workday, Indeed (open `good first issue`s, see
@@ -194,4 +204,4 @@ safe — actually doing that migration is still M4, deliberately last.
 
 ---
 
-> Last updated: 2026-08-06 (M3 full-loop session)
+> Last updated: 2026-08-07 (M3 merged to `dev`; `interview-prep` skill added)
