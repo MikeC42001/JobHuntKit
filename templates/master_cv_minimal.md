@@ -90,6 +90,8 @@ one-page budget allows; declare in ## Omit with a reason otherwise. -->
 **Volunteer role** | YYYY–present · Location
 - One bullet.
 
+<!-- render:stop -->
+
 ## Notes for tailoring (this section is never copied into a generated CV)
 
 Full rules live in `CV_SPEC.md` (this folder) and `docs/SPEC.md` (format contract) — read both
