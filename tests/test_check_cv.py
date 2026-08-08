@@ -99,6 +99,91 @@ def test_missing_locked_experience_entry_is_caught(demo_root):
     assert any("current role" in f and "missing" in f for f in failures), failures
 
 
+# ---------------------------------------------------------------------------
+# --pipeline full
+# ---------------------------------------------------------------------------
+
+ORBITAL_CV_FULL = os.path.join("applications", "offer-pages", "Orbital Dynamics", "cv.md")
+
+
+def _cv_full_path(demo_root):
+    return os.path.join(demo_root, ORBITAL_CV_FULL)
+
+
+def _build_full(demo_root):
+    """The full pipeline's cv.md isn't in the demo_root fixture until built — build it once,
+    same as a real check_cv.py run would expect after build_cv.py --all."""
+    import build_cv
+
+    cfg = cfgmod.resolve(demo_root)
+    master = build_cv.parse_master(cfg.master_full_path)
+    company_dir = os.path.dirname(_cv_full_path(demo_root))
+    build_cv.build_company(cfg, company_dir, master, check_only=False, pipeline="full")
+
+
+def test_full_pipeline_unmodified_demo_has_no_structure_failures(demo_root):
+    _build_full(demo_root)
+    cfg, alias_map = _cfg_and_alias(demo_root)
+    failures = check_cv.check_structure(cfg, _company_dir(demo_root), alias_map, pipeline="full")
+    assert failures == []
+
+
+def test_full_pipeline_reordered_experience_entries_are_caught(demo_root):
+    """Same fixture-mutation approach as the minimal pipeline's equivalent test, applied to
+    cv.md instead — proves --pipeline full checks against its own master (full wording), not the
+    minimal one."""
+    _build_full(demo_root)
+    cv_path = _cv_full_path(demo_root)
+    with open(cv_path, "r", encoding="utf-8") as f:
+        text = f.read()
+
+    self_directed_start = text.index("**Independent Projects")
+    current_role_start = text.index("**Software Engineer")
+    skills_start = text.index("## Skills")
+
+    header = text[:self_directed_start]
+    self_directed_block = text[self_directed_start:current_role_start]
+    current_role_block = text[current_role_start:skills_start]
+    footer = text[skills_start:]
+
+    reordered = header + current_role_block + self_directed_block + footer
+    with open(cv_path, "w", encoding="utf-8") as f:
+        f.write(reordered)
+
+    cfg, alias_map = _cfg_and_alias(demo_root)
+    failures = check_cv.check_structure(cfg, _company_dir(demo_root), alias_map, pipeline="full")
+
+    assert any("order wrong" in f for f in failures), failures
+
+
+def test_full_pipeline_coverage_totals(demo_root, capsys):
+    """Regression test for a real bug caught during development: templates/full.md makes
+    exp-course-tutor and vol-community unconditional (not gated by ## Include/## Omit), but
+    config.json's spine.optional_ids still lists them (shared with the minimal pipeline, which
+    *does* gate them). Coverage must not report an unconditionally-present id as DELIBERATE or
+    SILENT just because it's in that shared list — it must check whether *this* pipeline's own
+    template actually gates it."""
+    _build_full(demo_root)
+    cfg = cfgmod.resolve(demo_root)
+    company_dir = _company_dir(demo_root)
+
+    check_cv.run_coverage(cfg, [company_dir], pipeline="full")
+
+    out = capsys.readouterr().out
+    assert "15 of 15 master items present" in out
+    assert "exp-course-tutor" not in out, (
+        "unconditional in templates/full.md — must not appear as DELIBERATE/SILENT"
+    )
+    assert "DELIBERATE" not in out
+    assert "SILENT" not in out
+
+
+def test_gated_optional_ids_only_returns_ids_the_template_actually_gates():
+    template_text = "{{@exp-course-tutor}}\n\n{{@vol-community?section:Volunteer work}}\n"
+    result = check_cv.gated_optional_ids(template_text, ["exp-course-tutor", "vol-community"])
+    assert result == ["vol-community"]
+
+
 def test_not_configured_banner_when_spine_unset(tmp_path):
     """A fresh root with no spine configured must not silently report OK — it should say
     NOT CONFIGURED and no-op (exit 0), per Config.spine_configured."""
