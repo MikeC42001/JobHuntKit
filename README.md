@@ -152,8 +152,10 @@ pipeline (`cv.md`, same per-company selections as `cv-minimal.md`, opt in via an
 `verify_cvs.py --max-pages` lets a multi-page artifact be checked (or the gate disabled
 entirely) without touching the global one-page default. Not yet built: extractors for
 Greenhouse/Lever/Workday/Indeed (filed as `good first issue`s), a generated ChatGPT-paste
-variant of the agent instructions, and a roomier spine-only template. Tracked as milestones in
-this repo's issues.
+variant of the agent instructions, and a roomier spine-only template. Open questions and
+proposed work are tracked in [`community/`](community/), not GitHub Milestones (there aren't
+any) — see `community/README.md` for the lifecycle and `community/community.sh` for reading it
+back from the terminal.
 
 ## Running tests
 

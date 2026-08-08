@@ -19,3 +19,7 @@ All of these are thin pointers to the `agents/` files above, not separate copies
 
 For the format contract (not agent-specific — anyone can read this), see
 [`docs/SPEC.md`](docs/SPEC.md); for `config.json`, see [`docs/CONFIG.md`](docs/CONFIG.md).
+
+**Working on this repo itself, not a user's CV content?** See
+[`community/README.md`](community/README.md) — in particular, never open, label, or close a
+GitHub issue without the maintainer's explicit approval first.
