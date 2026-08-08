@@ -4,6 +4,11 @@ The queue described in `community/README.md`. Each entry is a genuine open quest
 work — see that file for what does and doesn't belong here, and for the approval steps that move
 an entry down this list.
 
+Think of this file as a **staging area before an idea becomes a public GitHub issue**, not a
+discussion venue itself. The actual back-and-forth — comments, 👍 reactions, "I'd want this
+too" — happens on GitHub once an entry is posted; this file just tracks what's worth asking and
+why, so posting is a deliberate step rather than every stray idea becoming a notification.
+
 **Status values:** `open` (not yet posted anywhere) · `posted (#N)` (a `question`-labelled issue
 exists, gathering reactions) · `promoted (#N)` (relabelled `enhancement`, now scoped work) ·
 `dropped (reason)`.
