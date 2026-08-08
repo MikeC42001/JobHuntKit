@@ -122,6 +122,27 @@ python engine/md_to_email_txt.py "applications/offer-pages/<Company>/cover_lette
 `collect_letters.py` deliberately has no `--all`/bulk mode — letters are reviewed one company at a
 time, on purpose. `render_letter.sh` takes no `--photo`/`--style`; a letter has neither.
 
+## The full CV — no build step
+
+`render_cv.sh` and `render_cv_photo.sh` render any CV markdown directly — a master file, a
+hand-written file, or a built `cv-minimal.md`/`cv.md`. No `build_cv.py`, no `check_cv.py`, no
+template. This is the long-form document you keep current, as opposed to the one-page, tailored
+`cv-minimal.pdf` from the numbered sequence above.
+
+```bash
+bash engine/render_cv.sh "master/master_cv_minimal.md"                    # single-column, ATS-safe
+bash engine/render_cv_photo.sh --photo images/<photo>.png \
+  "master/master_cv_minimal.md"                                          # two-column, with photo
+python engine/verify_cvs.py --max-pages 0 "master/generate-pdfs/cv.pdf"  # report page count, no gate
+```
+
+Both converters strip every `<!-- ... -->` comment themselves (a master's `<!-- @id -->` markers
+never reach the PDF) and honor a `<!-- render:stop -->` tag — put one above any section that
+shouldn't render at all, e.g. a master's `## Notes for tailoring`. See `docs/SPEC.md`'s "id-
+agnostic rendering" section for the full contract. `--photo` on `render_cv_photo.sh` falls back
+to `config.json`'s `render.default_photo`, same as `render_cv_minimal.sh`; `render_cv.sh` has no
+`--photo` at all.
+
 ## Not yet built (planned for a later milestone)
 
 - The rest of the extractor family — Greenhouse, Lever, Workday, Indeed (see
@@ -129,6 +150,9 @@ time, on purpose. `render_letter.sh` takes no `--photo`/`--style`; a letter has 
   in.
 - `scripts/build_paste_prompts.py` — a generated ChatGPT-paste variant of the agent instructions.
 - `templates/minimal-lean.md` — a roomier, spine-only template variant.
+- A dedicated `master/master_cv.md` + `templates/full.md` pair with its own `build_cv.py`
+  pipeline (a `cv.md` built and validated per company, the way `cv-minimal.md` is today). For
+  now `render_cv.sh`/`render_cv_photo.sh` work directly off `master_cv_minimal.md`.
 - Posting-change detection (re-fetching or diffing a live posting after it's been saved). Genuine
   gap today — `extract_posting.py` records which extractor ran and when, but nothing re-checks a
   posting after that.
