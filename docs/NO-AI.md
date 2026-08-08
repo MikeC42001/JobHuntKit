@@ -122,17 +122,20 @@ python engine/md_to_email_txt.py "applications/offer-pages/<Company>/cover_lette
 `collect_letters.py` deliberately has no `--all`/bulk mode — letters are reviewed one company at a
 time, on purpose. `render_letter.sh` takes no `--photo`/`--style`; a letter has neither.
 
-## The full CV — no build step
+## The full CV
 
-`render_cv.sh` and `render_cv_photo.sh` render any CV markdown directly — a master file, a
-hand-written file, or a built `cv-minimal.md`/`cv.md`. No `build_cv.py`, no `check_cv.py`, no
-template. This is the long-form document you keep current, as opposed to the one-page, tailored
-`cv-minimal.pdf` from the numbered sequence above.
+The long-form document you keep current and hand people, as opposed to the one-page, tailored
+`cv-minimal.pdf` from the numbered sequence above. Two ways to get it, pick based on whether you
+want per-company selection.
+
+**No build step — render the master directly.** `render_cv.sh` and `render_cv_photo.sh` render
+any CV markdown as-is: a master file, a hand-written file, or a built `cv.md`/`cv-minimal.md`. No
+`build_cv.py`, no `check_cv.py`, no template — this is the whole inventory, right now.
 
 ```bash
-bash engine/render_cv.sh "master/master_cv_minimal.md"                    # single-column, ATS-safe
+bash engine/render_cv.sh "master/master_cv.md"                            # single-column, ATS-safe
 bash engine/render_cv_photo.sh --photo images/<photo>.png \
-  "master/master_cv_minimal.md"                                          # two-column, with photo
+  "master/master_cv.md"                                                  # two-column, with photo
 python engine/verify_cvs.py --max-pages 0 "master/generate-pdfs/cv.pdf"  # report page count, no gate
 ```
 
@@ -143,6 +146,22 @@ agnostic rendering" section for the full contract. `--photo` on `render_cv_photo
 to `config.json`'s `render.default_photo`, same as `render_cv_minimal.sh`; `render_cv.sh` has no
 `--photo` at all.
 
+**Built and validated per company — same selection as the minimal pipeline.** Add
+`pipelines: minimal, full` to a company's `application.md` front matter (default with no
+`pipelines:` key at all is `minimal` only), then run the same build/check/render/verify sequence
+as step 1–5 above, with `--pipeline full` where it applies:
+
+```bash
+python engine/build_cv.py "applications/offer-pages/<Company>"   # writes cv-minimal.md AND cv.md
+python engine/check_cv.py --pipeline full "applications/offer-pages/<Company>"
+bash engine/render_cv.sh "applications/offer-pages/<Company>/cv.md"
+python engine/verify_cvs.py --max-pages 0 "applications/offer-pages/<Company>/generate-pdfs/cv.pdf"
+```
+
+Use this when you want the full CV to reflect the same `## Include`/`## Omit`/`## Projects`
+choices as the tailored one; use the build-free path above when you don't need per-company
+anything.
+
 ## Not yet built (planned for a later milestone)
 
 - The rest of the extractor family — Greenhouse, Lever, Workday, Indeed (see
@@ -150,9 +169,6 @@ to `config.json`'s `render.default_photo`, same as `render_cv_minimal.sh`; `rend
   in.
 - `scripts/build_paste_prompts.py` — a generated ChatGPT-paste variant of the agent instructions.
 - `templates/minimal-lean.md` — a roomier, spine-only template variant.
-- A dedicated `master/master_cv.md` + `templates/full.md` pair with its own `build_cv.py`
-  pipeline (a `cv.md` built and validated per company, the way `cv-minimal.md` is today). For
-  now `render_cv.sh`/`render_cv_photo.sh` work directly off `master_cv_minimal.md`.
 - Posting-change detection (re-fetching or diffing a live posting after it's been saved). Genuine
   gap today — `extract_posting.py` records which extractor ran and when, but nothing re-checks a
   posting after that.

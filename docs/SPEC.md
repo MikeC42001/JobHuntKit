@@ -1,48 +1,72 @@
 # SPEC.md — the format contract
 
-This is the mechanical reference for how `master/master_cv_minimal.md` +
-`templates/<name>.md` + `applications/offer-pages/<Company>/application.md` become a rendered
-CV. It's the *format* layer — syntax and parser behavior, true for every JobHuntKit user. Your
-own *personal policy* (which entries are locked, what never goes on a CV) belongs in your own
-`master/CV_SPEC.md` instead — see `templates/CV_SPEC.md` for that skeleton.
+This is the mechanical reference for how the two masters + `templates/<name>.md` +
+`applications/offer-pages/<Company>/application.md` become a rendered CV. It's the *format*
+layer — syntax and parser behavior, true for every JobHuntKit user. Your own *personal policy*
+(which entries are locked, what never goes on a CV) belongs in your own `master/CV_SPEC.md`
+instead — see `templates/CV_SPEC.md` for that skeleton.
 
 If you're doing your first setup, read `docs/GETTING-STARTED.md` first; come back here when you
 need the exact rules.
 
 ## Who owns what
 
+A chain, not two unrelated files: `master_cv.md` is the primary master (the complete inventory,
+`@id`-tagged); `master_cv_minimal.md` is a *condensation* of it — same ids, terser wording. One
+`application.md` per company drives both pipelines:
+
 ```
-master_cv_minimal.md      (locked wording, addressed by @id)
-templates/*.md             (which slots exist, in what order)
-<Company>/application.md   (the per-posting pitch)
-        └─> build_cv.py ─> <Company>/cv-minimal.md ─> render_cv_minimal.sh ─> PDF
-                              ▲                            ▲
-                   check_cv.py (spine, from config.json)   cv2html-minimal.js (heading order)
+master_cv.md ──condensed to──> master_cv_minimal.md
+     │                                  │
+     ▼ templates/full.md                ▼ templates/minimal-full.md
+     │  (roomier, generous)             │  (which slots exist, one-page discipline)
+     └──────────────┬───────────────────┘
+                     │
+        <Company>/application.md   (the per-posting pitch; "pipelines:" front-matter
+                     │              key selects minimal, full, or both — default minimal)
+        ┌────────────┴────────────┐
+        ▼ build_cv.py             ▼ build_cv.py
+<Company>/cv.md            <Company>/cv-minimal.md
+        │                                  │
+render_cv.sh /              render_cv_minimal.sh
+render_cv_photo.sh                         │
+        ▼                                  ▼
+      PDF                                PDF
+        ▲                                  ▲
+check_cv.py --pipeline full     check_cv.py (spine, from config.json)
+                                            ▲
+                              cv2html-minimal.js (heading order)
 ```
 
 Two places carry structural knowledge that the master/template alone can't express: `config.json`
-(which Experience entries are locked, and in what order — see `docs/CONFIG.md`) and
-`cv2html-minimal.js` (which section headings exist at all, and what order they render in,
-independent of the file's own order).
+(which Experience entries are locked, and in what order — see `docs/CONFIG.md`, shared by both
+pipelines) and `cv2html-minimal.js` (which section headings exist at all, and what order they
+render in, independent of the file's own order — `cv2html.js`/`cv2html-photo.js` have no such
+requirement, see "The full CV — id-agnostic rendering" below).
 
-That's the tailored, one-page pipeline. A second, much simpler path exists for the full CV — no
-build step, no template, no validator, just any CV markdown straight into a renderer:
+There's also a second, simpler path to the full CV that skips the build entirely — no template,
+no `application.md`, no validator, just any CV markdown straight into a renderer:
 
 ```
 <any CV markdown, e.g. master_cv.md itself>
         └─> render_cv.sh  or  render_cv_photo.sh  ─> PDF
 ```
 
-See "The full CV — id-agnostic rendering" below.
+Use the built `cv.md` path above when you want per-company selection (the same `## Include`/
+`## Omit` the minimal pipeline uses); point a renderer straight at `master_cv.md` when you just
+want the whole thing, right now, with no per-company anything.
 
 ## Generated files are build artifacts — never hand-edit
 
-`cv-minimal.md` in every company folder, and every rendered PDF, are generated. Edit
+`cv-minimal.md` and `cv.md` in every company folder, and every rendered PDF, are generated. Edit
 `application.md` and re-run `build_cv.py` — a hand-edit is silently overwritten by the next
 build. Per-company prose belongs in `application.md`, which the generator reads but never
 overwrites, so there's nothing left for a re-run to clobber.
 
-## The `@id` marker convention (`master_cv_minimal.md`)
+## The `@id` marker convention (both masters)
+
+Identical rules for `master_cv.md` and `master_cv_minimal.md` — the same `parse_master()` reads
+either, selected by which pipeline's calling it.
 
 - Marker is `<!-- @id -->` alone on its own line, immediately before the block it labels
   (`build_cv.py`'s `MARKER_RE`).
@@ -51,9 +75,20 @@ overwrites, so there's nothing left for a re-run to clobber.
   A blank line mid-entry silently truncates it — the easiest way to lose a new entry's later
   bullets.
 - Comment lines inside a block are skipped, not emitted.
-- A duplicate ID anywhere in the master is a hard build error.
+- A duplicate ID anywhere in *one* master is a hard build error. Duplicating an id *across* the
+  two masters is not an error — it's required. See "Id inheritance" below.
 - Content is copied **verbatim**, bullets and all — an Experience/Education block is
   `**Title** | right-side` plus its own `- ` bullets; a project block is just the `- ` bullet.
+
+### Id inheritance
+
+Every id in `master_cv_minimal.md` must also exist in `master_cv.md` — the minimal master is a
+condensation of the full one, not an independent file. The reverse doesn't hold: the full master
+may carry ids the condensation skips entirely (an older role, extra detail not worth a tailored
+one-pager's space — see the demo's `exp-first-internship` for a worked example). Nothing enforces
+this at build time (a missing id only surfaces as a hard error the moment some template actually
+references it), but `tests/test_build_cv.py` pins it for both the demo and the blank starter
+templates, so a check exists even though no runtime script asserts it.
 
 ### ID prefixes
 
@@ -181,6 +216,18 @@ all. Unlike `render_cv_minimal.sh`, they don't assume `build_cv.py` already clea
 There is no validator on this path — `check_cv.py` runs on the build side, where ids exist.
 Point either renderer at a loose file and it renders straight through, unvalidated, by design.
 
+That's the build-free path — render the master (or anything) as-is. There's also a *built*
+full CV: `application.md`'s `pipelines: minimal, full` opts a company into `build_cv.py` also
+producing `<Company>/cv.md` from `master_cv.md` + `templates/full.md`, with the same per-company
+`## Include`/`## Omit`/`## Projects` selection the minimal pipeline uses, then validated by
+`check_cv.py --pipeline full`. `templates/full.md`'s own convention: most spine entries are
+unconditional `{{@id}}` rather than `{{@id?}}` — the full CV is generous by default, since
+there's no page budget forcing a choice — so `spine.optional_ids` (shared config with the
+minimal pipeline) mostly doesn't apply there. `check_cv.py --coverage --pipeline full` only
+reports an id as gated if the full template actually contains `{{@id?}}`/`{{@id?section:H}}`
+for it (`gated_optional_ids()`) — reporting a shared `optional_ids` entry as DELIBERATE/SILENT
+when the full template made it unconditional would be actively wrong, not just noisy.
+
 Note `render_cv_minimal.sh --style c` is also two-column, for an unrelated reason (a ledger-grid
 layout choice within the one-page tailored pipeline) — it is not the same thing as
 `render_cv_photo.sh`'s multi-page, full-inventory two-column layout, despite both being
@@ -234,23 +281,34 @@ assumed:
   the exit code — they're a prompt to decide, not a hard gate.
 - A fresh root with nothing configured in `config.json`'s `spine` block prints a `NOT
   CONFIGURED` banner (exit 0) instead of a false "all OK" — see `docs/CONFIG.md`.
+- `--pipeline full` runs either check against `cv.md`/`master_cv.md` instead of
+  `cv-minimal.md`/`master_cv_minimal.md`. Same `spine` config either way — locked order,
+  verbatim ids, and education titles aren't per-pipeline — but coverage only reports an
+  `optional_ids` entry as gated if the pipeline's own template actually gates it (see "The full
+  CV — id-agnostic rendering" above).
 
 ## Recipes — what to touch, in order
 
-**Add a new portfolio project.** Add a `<!-- @proj-<slug> -->` block to the master. Reference it
-from any `application.md`'s `## Projects`. Run `check_cv.py --coverage` afterward — every
+Every recipe below touches `master_cv.md` first (full wording), then condenses the same block
+into `master_cv_minimal.md` (same id, terser) — see "Id inheritance" above. Skip the second half
+if the entry only belongs in the complete record.
+
+**Add a new portfolio project.** Add a `<!-- @proj-<slug> -->` block to the master(s). Reference
+it from any `application.md`'s `## Projects`. Run `check_cv.py --coverage` afterward — every
 application that doesn't reference the new project now shows it SILENT until you declare it in
 `## Omit` (or add it).
 
 **Add a new optional (non-locked) entry.** Add a `<!-- @exp-<slug> -->` (or `vol-<slug>`) block
-to the master, add its id to `config.json`'s `spine.optional_ids`, and reference it via
+to the master(s), add its id to `config.json`'s `spine.optional_ids`, and reference it via
 `## Include` on whichever `application.md`s should carry it. If the template uses
 `{{@id?section:Heading}}` for a whole optional section, make sure the heading text matches.
+`templates/full.md`'s own convention is to make this id *unconditional* instead — an intentional
+difference, not an oversight, see "The full CV — id-agnostic rendering" above.
 
 **Add a new locked entry.** Same block shape, but add the id to `spine.locked_order` (and give
-the template an unconditional `{{@id}}` slot) instead of `optional_ids`. This changes **every**
-company's next build, not just new ones — decide deliberately, not as a side effect of adding
-one application.
+`templates/minimal-full.md` an unconditional `{{@id}}` slot) instead of `optional_ids`. This
+changes **every** company's next minimal build, not just new ones — decide deliberately, not as
+a side effect of adding one application.
 
 **Add a new configurable field.** Add a `## Field Name` heading to your `application.md`s that
 should carry it, and reference it from the template as `{{FIELD_NAME}}` (or with a fallback,

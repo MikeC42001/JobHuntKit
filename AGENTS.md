@@ -7,7 +7,8 @@ Start at [`agents/CONTEXT.md`](agents/CONTEXT.md) — root-finding, file ownersh
 never-auto-commit rule shared by every task-specific instruction file. Then:
 
 - [`agents/cv-setup.md`](agents/cv-setup.md) — set up or evolve your CV content layer
-  (`profile/background.md`, `master/master_cv_minimal.md`). Start here on a fresh root.
+  (`profile/background.md`, and two masters: `master/master_cv.md` the primary/complete
+  inventory, `master/master_cv_minimal.md` its condensation). Start here on a fresh root.
 - [`agents/cv-tailor.md`](agents/cv-tailor.md) — scan for new/stale applications, draft
   `application.md`, build, validate, render, and stage a tailored CV (and optionally a cover
   letter) for one posting.

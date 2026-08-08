@@ -41,13 +41,16 @@ In the order the script's own "Next" output suggests:
 2. **`profile/background.md`** — write down everything about your background, raw and
    unstructured. Nothing parses this file; it's your own raw material for step 3. See
    `docs/CONFIG.md` for what feeds off `config.json` instead.
-3. **`master/master_cv_minimal.md`** — distil `background.md` into `@id`-tagged blocks. The file
-   has a worked comment on every block explaining what it's for; the full marker syntax is in
-   `docs/SPEC.md`. This is the file every generated CV pulls locked content from.
+3. **`master/master_cv.md`** — the primary master: distil `background.md` into `@id`-tagged
+   blocks, full wording, no length pressure — this is the complete record. The file has a worked
+   comment on every block explaining what it's for; the full marker syntax is in `docs/SPEC.md`.
+4. **`master/master_cv_minimal.md`** — condense the same blocks, same `@id`s, terser wording.
+   This is the file the tailored one-page pipeline pulls locked content from; the full master
+   from step 3 is what the full-CV pipeline and `render_cv.sh`/`render_cv_photo.sh` use.
 
-If you'd rather have an agent do steps 2–3 as a guided conversation instead of writing them by
+If you'd rather have an agent do steps 2–4 as a guided conversation instead of writing them by
 hand, see `agents/cv-setup.md` (Bootstrap mode) — it walks through the same decisions
-interactively, including the locked-spine question in step 4 below.
+interactively, including the locked-spine question in the next step below.
 
 ## 3. Decide what's locked
 
@@ -92,6 +95,21 @@ python engine/verify_cvs.py
 gitignored at the default root). `verify_cvs.py` confirms the rendered PDF is exactly one page
 (or whatever `config.json`'s `limits.max_pages` says); if it isn't, trim content (fewer
 projects, a shorter About me) rather than shrinking margins.
+
+## 6. Optional: the full CV
+
+The tailored, one-page `cv-minimal.pdf` above is what you send per application. If you also want
+a long-form CV — the complete record, no page budget — point a renderer straight at the master
+you wrote in step 3, no build step needed:
+
+```bash
+bash engine/render_cv.sh "master/master_cv.md"                              # single-column, ATS-safe
+bash engine/render_cv_photo.sh --photo images/me.png "master/master_cv.md"  # two-column, with photo
+```
+
+If you'd rather have it built and validated per company the same way `cv-minimal.md` is (using
+the same `application.md` selections), add `pipelines: minimal, full` to that company's front
+matter and re-run `engine/build_cv.py` — see `docs/CONFIG.md`'s `pipelines` section.
 
 ## What's next
 

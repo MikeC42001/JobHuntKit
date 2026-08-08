@@ -193,16 +193,16 @@ If asked to draft one:
 
        ! python engine/md_to_email_txt.py "applications/offer-pages/<Company>/cover_letter.md"
 
-## Step 6c — Optional: render the full CV (not tied to any one company, never automatic)
+## Step 6c — Optional: the full CV (never automatic)
 
-Not part of the default run. This is upkeep on the long-form CV — the document handed to
-someone directly, as opposed to a per-posting `cv-minimal.pdf` — so it only makes sense to offer
-after a master edit, not as part of tailoring a specific application.
+Not part of the default run. This is the long-form document handed to someone directly, as
+opposed to a per-posting `cv-minimal.pdf`. Two ways to offer it — ask which fits:
 
-If asked to render it:
+**Not tied to any company** — upkeep on the master itself, offer after a master edit rather than
+as part of tailoring a specific application:
 
-    ! bash engine/render_cv.sh "master/master_cv_minimal.md"
-    ! bash engine/render_cv_photo.sh --photo images/<photo>.png "master/master_cv_minimal.md"
+    ! bash engine/render_cv.sh "master/master_cv.md"
+    ! bash engine/render_cv_photo.sh --photo images/<photo>.png "master/master_cv.md"
 
 Both take any CV markdown directly — no `build_cv.py`, no `check_cv.py`, no template. They clean
 their own input (strip `<!-- ... -->` comments, honor a `<!-- render:stop -->` tag — see
@@ -211,6 +211,16 @@ assembly step. There's nothing to verify against a page-count gate by default; i
 the page count without failing on it:
 
     ! python engine/verify_cvs.py --max-pages 0 "master/generate-pdfs/cv.pdf"
+
+**Tied to this company's own selections** — the same `## Include`/`## Omit`/`## Projects` choices
+this run already made for `cv-minimal.md`, built and validated the same way. Requires
+`pipelines: minimal, full` in this company's `application.md` front matter (add it if asked for
+this, rather than assuming it's already there):
+
+    ! python engine/build_cv.py "applications/offer-pages/<Company>"
+    ! python engine/check_cv.py --pipeline full "applications/offer-pages/<Company>"
+    ! bash engine/render_cv.sh "applications/offer-pages/<Company>/cv.md"
+    ! python engine/verify_cvs.py --max-pages 0 "applications/offer-pages/<Company>/generate-pdfs/cv.pdf"
 
 ## Step 7 — Report
 
