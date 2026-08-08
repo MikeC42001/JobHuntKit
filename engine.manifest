@@ -21,6 +21,7 @@ scripts/
 templates/
 agents/
 docs/
+community/
 examples/
 tests/
 .claude/
