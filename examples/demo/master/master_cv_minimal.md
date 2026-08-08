@@ -92,6 +92,8 @@ one-page budget allows; declare in ## Omit with a reason otherwise. -->
 **Community volunteering** | 2021–present · Rivertown
 - Weekend shifts at a local food bank.
 
+<!-- render:stop -->
+
 ## Notes for tailoring (this section is never copied into a generated CV)
 
 Full rules live in `CV_SPEC.md` (this folder) — read it before writing an `application.md`.

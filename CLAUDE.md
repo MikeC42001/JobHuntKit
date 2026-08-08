@@ -26,7 +26,7 @@ master. `engine/build_cv.py` assembles the three into `cv-minimal.md`; `engine/c
 validates the locked spine landed correctly and reports coverage; `engine/render_cv_minimal.sh`
 renders it to PDF; `engine/verify_cvs.py` gates page count.
 
-## Current state (M0-M3 merged to `dev` via PR #1, 2026-08-07)
+## Current state (M0-M3 merged to `dev`; full-CV pipeline on PR #2, 2026-08-08)
 
 Working end-to-end: clone → `bash demo.sh` → build → validate → render → verify → one-page PDF,
 now genuinely cross-platform-verified — the `render-matrix` CI job (PR #1, 2026-08-05) runs
@@ -174,10 +174,32 @@ against what was already written, factual drift, vague self-praise, and unprofes
 was exercised and validated in the private `job-hunt/` folder first, same pattern as every other
 agent skill here.
 
+**Full-CV pipeline added, 2026-08-08, on `feat/m3-full-cv-pipeline`** (PR #2, open against `dev`,
+CI green — all 6 jobs including both `render-matrix` legs). This was in M3's original scope and
+got dropped when M3 shipped; picked back up as deferred M3, not new scope. `engine/render_cv.sh`
+(single-column, ATS-safe, no photo) and `engine/render_cv_photo.sh` (two-column, circular photo)
+are ports of the private pipeline's equivalents, look preserved verbatim, rebuilt on this
+project's conventions (`engine/lib.sh` helpers, tracked `render-support/cv2html.js`/
+`cv2html-photo.js` rather than heredocs). The new capability neither private script had:
+**id-agnostic rendering** — both converters clean their own input (strip every
+`<!-- ... -->` comment, honor a new `<!-- render:stop -->` tag), so either renders a built
+`cv.md`, a master file pointed at directly, or a hand-written file with no `@id` scheme, with no
+build step or intermediate file. `engine/verify_cvs.py` gained `--max-pages N` (0 disables the
+gate) for checking a multi-page artifact without touching `limits.max_pages`'s 1-page default.
+`demo.sh` grew from 5 to 7 steps, rendering `examples/demo/master/master_cv_minimal.md` through
+both new renderers — free cross-platform coverage via CI's existing `render-matrix` job. 90/90
+tests pass (5 new, all for `--max-pages`), lint clean, leak gate clean. Also this session: filed
+the 4 extractor `good first issue`s (#3–#6) and deleted 4 stale merged branches. Deliberately not
+in this PR: a dedicated `master/master_cv.md` + `templates/full.md` pair with its own
+`build_cv.py`/`check_cv.py` pipeline — for now the new renderers work directly off
+`master_cv_minimal.md`. That's the natural next follow-up.
+
 **Not yet built** (M4, full breakdown in this machine's `~/.claude/plans/` history — the
 original M0–M4 design doc):
-- Extractors for Greenhouse, Lever, Workday, Indeed (open `good first issue`s, see
-  `docs/EXTRACTORS.md`)
+- Extractors for Greenhouse, Lever, Workday, Indeed — now filed as `good first issue`s (#3–#6,
+  2026-08-08), see `docs/EXTRACTORS.md`
+- A dedicated `master/master_cv.md` + `templates/full.md` pair with its own `build_cv.py`
+  pipeline (see full-CV pipeline entry above)
 - `scripts/build_paste_prompts.py` — a generated ChatGPT-paste variant of the agent instructions
 - `templates/minimal-lean.md` (roomier spine-only variant)
 - `CHANGELOG.md`, the `v0.1.0` tag, GitHub topics/description/social preview, README badges
@@ -204,4 +226,5 @@ safe — actually doing that migration is still M4, deliberately last.
 
 ---
 
-> Last updated: 2026-08-07 (M3 merged to `dev`; `interview-prep` skill added)
+> Last updated: 2026-08-08 (full-CV pipeline on PR #2 — render_cv.sh/render_cv_photo.sh,
+> id-agnostic rendering, extractor issues filed, branch cleanup)

@@ -193,6 +193,25 @@ If asked to draft one:
 
        ! python engine/md_to_email_txt.py "applications/offer-pages/<Company>/cover_letter.md"
 
+## Step 6c — Optional: render the full CV (not tied to any one company, never automatic)
+
+Not part of the default run. This is upkeep on the long-form CV — the document handed to
+someone directly, as opposed to a per-posting `cv-minimal.pdf` — so it only makes sense to offer
+after a master edit, not as part of tailoring a specific application.
+
+If asked to render it:
+
+    ! bash engine/render_cv.sh "master/master_cv_minimal.md"
+    ! bash engine/render_cv_photo.sh --photo images/<photo>.png "master/master_cv_minimal.md"
+
+Both take any CV markdown directly — no `build_cv.py`, no `check_cv.py`, no template. They clean
+their own input (strip `<!-- ... -->` comments, honor a `<!-- render:stop -->` tag — see
+`docs/SPEC.md`'s "id-agnostic rendering" section), so pointing either at the master works with no
+assembly step. There's nothing to verify against a page-count gate by default; if asked, report
+the page count without failing on it:
+
+    ! python engine/verify_cvs.py --max-pages 0 "master/generate-pdfs/cv.pdf"
+
 ## Step 7 — Report
 
 One summary, not a play-by-play:
@@ -206,6 +225,7 @@ One summary, not a play-by-play:
 - Where the PDFs landed (`produced/to_send/`) and that the person should review them before
   sending — this instruction never sends anything itself.
 - Any cover letters drafted this run (Step 6b), if that was asked for.
+- Whether the full CV was re-rendered this run (Step 6c), if that was asked for.
 
 No auto-commit. Git stays manual — mention what changed so the person can review before
 committing.

@@ -52,6 +52,26 @@ applications/offer-pages/<Company>/generate-pdfs/cv-minimal.pdf
 are generated — edit `application.md` and re-run instead of touching them, or the next build
 silently overwrites your change.
 
+There's a second, simpler path for the **full CV** — the long-form document you keep current and
+hand people, as opposed to the one-page, per-posting `cv-minimal.pdf` above. No build step, no
+template: `render_cv.sh` and `render_cv_photo.sh` render *any* CV markdown, comments and all,
+including a master file pointed at directly:
+
+```
+master/master_cv_minimal.md   (or any hand-written CV markdown — no @id scheme required)
+        │
+        ▼   engine/render_cv.sh          (single-column, ATS-safe, no photo)
+        ▼   engine/render_cv_photo.sh    (two-column, circular photo)
+master/generate-pdfs/cv.pdf
+master/generate-pdfs/cv-photo.pdf
+```
+
+In one line: **`cv-minimal.pdf` is what you send; the full CV is what you have.** Both renderers
+strip `<!-- ... -->` comments themselves (so a master's `<!-- @id -->` markers never reach the
+PDF) and honor a `<!-- render:stop -->` tag for anything that shouldn't render at all, like a
+master's "Notes for tailoring" section — see `docs/SPEC.md`'s "id-agnostic rendering" section for
+the full contract. There's no validator on this path; `check_cv.py` runs only where `@id`s exist.
+
 ## Quickstart with your own data
 
 ```bash
@@ -85,6 +105,8 @@ Running the whole pipeline by hand, no agent involved: [docs/NO-AI.md](docs/NO-A
 | `engine/check_cv.py` | Validates the locked spine landed correctly (`structure`, the default) and reports what's present/omitted/silently-missing per application (`--coverage`) |
 | `engine/verify_cvs.py` | Confirms a rendered PDF is exactly one page (or whatever `limits.max_pages` says) |
 | `engine/render_cv_minimal.sh` | Renders `cv-minimal.md` to a one-column PDF with a circular photo |
+| `engine/render_cv.sh` | Renders any CV markdown (built, a master, or hand-written) to a single-column, ATS-safe PDF — no build step required |
+| `engine/render_cv_photo.sh` | Same, but two-column with a circular photo — the full-CV companion to `render_cv_minimal.sh`'s photo styles |
 | `engine/render_letter.sh` | Renders `cover_letter.md` to a clean, prose-only PDF |
 | `engine/md_to_email_txt.py` | Flattens a hand-wrapped cover letter into paste-ready plain email text |
 | `engine/collect_cvs.py` | Stages rendered CVs into `produced/to_send/` for review |
@@ -111,10 +133,15 @@ pytest suite covers the golden build, the structure/coverage checkers, the leak 
 scaffolding script, the scan/collect/extractor logic, and the email flattener (see Running tests
 below), and CI (`.github/workflows/ci.yml`) runs it on every push — lint, the pytest suite on
 ubuntu/macos/windows, and a render-matrix job proving `demo.sh` actually works end-to-end on
-ubuntu and macOS, not just the Windows machine it was built on. Not yet built: extractors for
-Greenhouse/Lever/Workday/Indeed (filed as `good first issue`s), a generated ChatGPT-paste variant
-of the agent instructions, and a roomier spine-only template. Tracked as milestones in this
-repo's issues.
+ubuntu and macOS, not just the Windows machine it was built on. Now also in: the full-CV pipeline
+— `render_cv.sh`/`render_cv_photo.sh`, id-agnostic renderers that clean their own input (comment
+stripping, a `<!-- render:stop -->` tag), so a master file renders directly with no build step.
+`verify_cvs.py --max-pages` lets a multi-page artifact be checked (or the gate disabled entirely)
+without touching the global one-page default. Not yet built: extractors for Greenhouse/Lever/
+Workday/Indeed (filed as `good first issue`s), a generated ChatGPT-paste variant of the agent
+instructions, a dedicated `master_cv.md`/`templates/full.md` pair with its own `build_cv.py`
+pipeline (today the full-CV renderers work directly off `master_cv_minimal.md`), and a roomier
+spine-only template. Tracked as milestones in this repo's issues.
 
 ## Running tests
 

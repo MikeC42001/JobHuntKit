@@ -25,6 +25,16 @@ Two places carry structural knowledge that the master/template alone can't expre
 `cv2html-minimal.js` (which section headings exist at all, and what order they render in,
 independent of the file's own order).
 
+That's the tailored, one-page pipeline. A second, much simpler path exists for the full CV — no
+build step, no template, no validator, just any CV markdown straight into a renderer:
+
+```
+<any CV markdown, e.g. master_cv.md itself>
+        └─> render_cv.sh  or  render_cv_photo.sh  ─> PDF
+```
+
+See "The full CV — id-agnostic rendering" below.
+
 ## Generated files are build artifacts — never hand-edit
 
 `cv-minimal.md` in every company folder, and every rendered PDF, are generated. Edit
@@ -151,6 +161,30 @@ rules: everything from a lone `---` line onward is cut, and the final paragraph 
 block) is rendered with real line breaks between its lines instead of collapsing into one run-on
 line the way plain markdown treats a single-newline-separated paragraph. No `{{...}}` tokens, no
 `@id` markers — write it as you'd write the letter.
+
+## The full CV — id-agnostic rendering
+
+`engine/render_cv.sh` (single-column, ATS-safe, no photo) and `engine/render_cv_photo.sh`
+(two-column, circular photo) render **any** CV markdown, not just a build artifact: a built
+`cv.md`, either master file pointed at directly, or a hand-written file with no `@id` scheme at
+all. Unlike `render_cv_minimal.sh`, they don't assume `build_cv.py` already cleaned the input —
+`render-support/cv2html.js` and `render-support/cv2html-photo.js` do that themselves:
+
+1. Every `<!-- ... -->` comment is stripped, including `<!-- @id -->` content markers — a master
+   file carries these and nothing upstream removes them before this converter sees the file.
+2. A `<!-- render:stop -->` tag cuts everything from that line onward. Drop it above any section
+   that shouldn't reach the PDF — e.g. a master's `## Notes for tailoring`, which would otherwise
+   render like any other section, since these converters (unlike `cv2html-minimal.js`) don't
+   recognize CV section headings and pass every `## ` through as-is.
+3. `> ` lines are stripped, same convention as every other renderer here.
+
+There is no validator on this path — `check_cv.py` runs on the build side, where ids exist.
+Point either renderer at a loose file and it renders straight through, unvalidated, by design.
+
+Note `render_cv_minimal.sh --style c` is also two-column, for an unrelated reason (a ledger-grid
+layout choice within the one-page tailored pipeline) — it is not the same thing as
+`render_cv_photo.sh`'s multi-page, full-inventory two-column layout, despite both being
+two-column PDFs.
 
 ## Renderer compatibility contract
 
