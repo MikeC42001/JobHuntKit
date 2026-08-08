@@ -26,7 +26,7 @@ master. `engine/build_cv.py` assembles the three into `cv-minimal.md`; `engine/c
 validates the locked spine landed correctly and reports coverage; `engine/render_cv_minimal.sh`
 renders it to PDF; `engine/verify_cvs.py` gates page count.
 
-## Current state (M0-M3 merged to `dev`; full-CV pipeline on PR #2, 2026-08-08)
+## Current state (M0-M3 merged to `dev`; deferred-M3 full-CV pipeline complete, 2026-08-08)
 
 Working end-to-end: clone → `bash demo.sh` → build → validate → render → verify → one-page PDF,
 now genuinely cross-platform-verified — the `render-matrix` CI job (PR #1, 2026-08-05) runs
@@ -174,7 +174,7 @@ against what was already written, factual drift, vague self-praise, and unprofes
 was exercised and validated in the private `job-hunt/` folder first, same pattern as every other
 agent skill here.
 
-**Full-CV pipeline added, 2026-08-08, on `feat/m3-full-cv-pipeline`** (PR #2, open against `dev`,
+**Full-CV pipeline added, 2026-08-08, on `feat/m3-full-cv-pipeline`** (PR #2, **merged to `dev`**,
 CI green — all 6 jobs including both `render-matrix` legs). This was in M3's original scope and
 got dropped when M3 shipped; picked back up as deferred M3, not new scope. `engine/render_cv.sh`
 (single-column, ATS-safe, no photo) and `engine/render_cv_photo.sh` (two-column, circular photo)
@@ -186,20 +186,46 @@ project's conventions (`engine/lib.sh` helpers, tracked `render-support/cv2html.
 `cv.md`, a master file pointed at directly, or a hand-written file with no `@id` scheme, with no
 build step or intermediate file. `engine/verify_cvs.py` gained `--max-pages N` (0 disables the
 gate) for checking a multi-page artifact without touching `limits.max_pages`'s 1-page default.
-`demo.sh` grew from 5 to 7 steps, rendering `examples/demo/master/master_cv_minimal.md` through
-both new renderers — free cross-platform coverage via CI's existing `render-matrix` job. 90/90
-tests pass (5 new, all for `--max-pages`), lint clean, leak gate clean. Also this session: filed
-the 4 extractor `good first issue`s (#3–#6) and deleted 4 stale merged branches. Deliberately not
-in this PR: a dedicated `master/master_cv.md` + `templates/full.md` pair with its own
-`build_cv.py`/`check_cv.py` pipeline — for now the new renderers work directly off
-`master_cv_minimal.md`. That's the natural next follow-up.
+`demo.sh` grew from 5 to 7 steps at this point, rendering `examples/demo/master/master_cv_minimal.md`
+through both new renderers. 90/90 tests pass (5 new, all for `--max-pages`), lint clean, leak gate
+clean. Also this session: filed the 4 extractor `good first issue`s (#3–#6) and deleted 4 stale
+merged branches.
 
-**Not yet built** (M4, full breakdown in this machine's `~/.claude/plans/` history — the
-original M0–M4 design doc):
-- Extractors for Greenhouse, Lever, Workday, Indeed — now filed as `good first issue`s (#3–#6,
-  2026-08-08), see `docs/EXTRACTORS.md`
-- A dedicated `master/master_cv.md` + `templates/full.md` pair with its own `build_cv.py`
-  pipeline (see full-CV pipeline entry above)
+**Second master shipped same day, 2026-08-08, on `feat/second-master-pipeline`** (PR #7, **merged
+to `dev`**, CI green — all 6 jobs including both `render-matrix` legs). The follow-up flagged in
+PR #2, picked up immediately: `master/master_cv.md` is now the **primary master** — the complete
+inventory, `@id`-tagged, a real long-form document — and `master_cv_minimal.md` is explicitly its
+**condensation**: same ids, terser wording. Every minimal id must exist in the full master; the
+reverse doesn't hold (the demo's `exp-first-internship` is full-only), pinned by tests against
+both the demo and the blank starter templates. `templates/full.md` is the long-form build
+template — roomier, no page budget, most spine entries **unconditional** `{{@id}}` where the
+minimal template gates the same ids behind `{{@id?}}`.
+
+`engine/config.py` gained a `pipelines` block (`Config.pipeline(name)` → resolved master/
+template/output path), making `build_cv.py` data-driven instead of hardcoding `cv-minimal.md`.
+`build_cv.py` now builds **both** pipelines from **one** `application.md` — an optional
+`pipelines:` front-matter key (e.g. `pipelines: minimal, full`) opts a company in; no such key
+at all (every pre-existing `application.md`) keeps building exactly as before, verified as an
+explicit regression guard against `build_company()`'s original call signature. `check_cv.py
+--pipeline full` validates `cv.md` against `master_cv.md`, same `spine.json` config either way.
+
+**A real bug found and fixed by actually running the new code:** coverage's optional-id
+reporting blindly trusted the shared `spine.optional_ids` config list — wrong for the full
+pipeline, since `templates/full.md` makes those same ids unconditional. `exp-course-tutor` was
+reported DELIBERATE (omitted) despite being genuinely present in the rendered `cv.md`. Fixed
+with `gated_optional_ids()`, which checks whether the pipeline's *own template* actually gates
+an id before reporting it as gated at all — now a regression test.
+
+`agents/cv-setup.md`'s Update mode gained the middle stop: file a new fact into `master_cv.md`
+first (full wording), then condense the same block into `master_cv_minimal.md` (same id) — the
+one place the chain is actually enforced, since no script can condense prose. `demo.sh` grew
+from 7 to 10 steps — the existing build already produced `cv.md` once the demo's
+`application.md` opted in, but nothing had checked or rendered it; new steps close that gap, and
+the direct-master-render steps switched to `master_cv.md` (the primary) to match the docs.
+102/102 tests pass (12 new), lint clean, leak gate clean.
+
+**Not yet built (M4, next up)** — full breakdown in this machine's `~/.claude/plans/` history,
+the original M0–M4 design doc:
 - `scripts/build_paste_prompts.py` — a generated ChatGPT-paste variant of the agent instructions
 - `templates/minimal-lean.md` (roomier spine-only variant)
 - `CHANGELOG.md`, the `v0.1.0` tag, GitHub topics/description/social preview, README badges
@@ -207,6 +233,9 @@ original M0–M4 design doc):
   in both the public and private pipelines, not scoped to any milestone yet
 - Optionally, the first `sync.sh pull` into the private `job-hunt/` folder, to prove the
   mechanism round-trips
+
+Extractors for Greenhouse, Lever, Workday, Indeed are filed as `good first issue`s (#3–#6,
+2026-08-08, see `docs/EXTRACTORS.md`) — **explicitly parked for after M4**, not blocking it.
 
 ## Relationship to the private `job-hunt/` folder
 
@@ -226,5 +255,6 @@ safe — actually doing that migration is still M4, deliberately last.
 
 ---
 
-> Last updated: 2026-08-08 (full-CV pipeline on PR #2 — render_cv.sh/render_cv_photo.sh,
-> id-agnostic rendering, extractor issues filed, branch cleanup)
+> Last updated: 2026-08-08 (deferred-M3 full-CV pipeline complete — PR #2 render_cv.sh/
+> render_cv_photo.sh id-agnostic rendering, PR #7 master_cv.md + dual build_cv.py pipeline,
+> both merged to dev; extractor issues filed, all branches cleaned up)
