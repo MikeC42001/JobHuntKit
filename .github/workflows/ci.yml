@@ -58,6 +58,12 @@ jobs:
       - name: Install Chrome
         id: setup-chrome
         uses: browser-actions/setup-chrome@v1
+      - name: Syntax-check the tracked JS converters
+        run: |
+          node --check engine/render-support/cv2html.js
+          node --check engine/render-support/cv2html-photo.js
+          node --check engine/render-support/cv2html-minimal.js
+          node --check engine/render-support/letter2html.js
       - name: Run demo.sh (build, check, render, verify)
         run: bash demo.sh
         env:
