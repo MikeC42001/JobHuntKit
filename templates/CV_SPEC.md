@@ -8,6 +8,11 @@ toolkit's published `docs/SPEC.md` — this file is just the personal policy lay
 Read `docs/GETTING-STARTED.md` before filling this in — it walks through the whole first-run
 sequence and explains why a locked spine is worth the up-front decision.
 
+One spine, two masters: `master/master_cv.md` (the primary, complete inventory) and
+`master/master_cv_minimal.md` (a condensation of it — same ids, terser wording). The decisions
+below apply to both; `config.json`'s `spine` block isn't per-pipeline. See `docs/SPEC.md`'s "The
+full CV — id-agnostic rendering" for how the two masters relate.
+
 ## Locked spine (always present, always in this order)
 
 1. `` — which Experience id, and why it's non-negotiable.

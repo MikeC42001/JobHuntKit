@@ -38,15 +38,20 @@ REPO_ROOT = os.path.dirname(SCRIPT_DIR)
 sys.path.insert(0, os.path.join(REPO_ROOT, "engine"))
 import config as cfgmod  # noqa: E402
 
-# (source path relative to REPO_ROOT/templates, destination relative to root) — the one real CV
-# template, read in place when root == this checkout, copied elsewhere. Personal in the sense
-# that a user will eventually customize it, but it holds no personal data, so --force may touch it.
-CV_TEMPLATES = ["minimal-full.md"]
+# (source path relative to REPO_ROOT/templates, destination relative to root) — the CV build
+# templates, read in place when root == this checkout, copied elsewhere. Personal in the sense
+# that a user will eventually customize them, but they hold no personal data, so --force may
+# touch them. "full.md" drives the full-CV pipeline (master_cv.md -> cv.md), alongside
+# "minimal-full.md" for the tailored one-pager (master_cv_minimal.md -> cv-minimal.md).
+CV_TEMPLATES = ["minimal-full.md", "full.md"]
 
 # (source path relative to REPO_ROOT, destination relative to root) — copied once, never by
-# --force. Order is the order they're reported in.
+# --force. Order is the order they're reported in. "master_cv.md" is the primary master (the
+# complete inventory); "master_cv_minimal.md" is its condensation — see docs/SPEC.md's "The full
+# CV — id-agnostic rendering" for how the two relate.
 STARTER_FILES = [
     ("config.example.json", "config.json"),
+    ("templates/master_cv.md", "master/master_cv.md"),
     ("templates/master_cv_minimal.md", "master/master_cv_minimal.md"),
     ("templates/CV_SPEC.md", "master/CV_SPEC.md"),
     ("templates/background.md", "profile/background.md"),
