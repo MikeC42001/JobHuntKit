@@ -87,6 +87,8 @@ no_browser_error() {
 native_path() {
   if is_windows_shell; then
     local dir base
+    # shellcheck disable=SC2015 # if cd fails the caller already handed us a bad path; falling
+    # back to pwd here just means "same wrong path back", not a masked success.
     dir="$(cd "$(dirname "$1")" && pwd -W 2>/dev/null || pwd)"
     base="$(basename "$1")"
     printf '%s/%s' "$dir" "$base"

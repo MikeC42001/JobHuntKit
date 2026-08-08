@@ -18,7 +18,7 @@ jobs:
       - name: Leak gate (audit_public.py)
         run: python scripts/audit_public.py
       - name: Shellcheck
-        run: shellcheck engine/*.sh scripts/*.sh community/*.sh
+        run: shellcheck -x engine/*.sh scripts/*.sh community/*.sh
 
   test:
     # Pure-Python pytest suite (build/check/audit + the sync.sh leak-gate integration tests) —
