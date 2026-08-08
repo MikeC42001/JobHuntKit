@@ -20,7 +20,11 @@ Full shape (`config.example.json`, also `engine/config.py`'s `DEFAULT_CONFIG`):
     "heading_aliases": {}
   },
   "limits": { "soft_line_budget": 57, "max_pages": 1 },
-  "display_names": {}
+  "display_names": {},
+  "pipelines": {
+    "minimal": { "master": "master/master_cv_minimal.md", "template": "minimal-full", "out": "cv-minimal.md" },
+    "full": { "master": "master/master_cv.md", "template": "full", "out": "cv.md" }
+  }
 }
 ```
 
@@ -70,6 +74,27 @@ safe to run against immediately: there's genuinely nothing to check yet, and the
 | Key | Default | Notes |
 |---|---|---|
 | *(any)* | `{}` | `{"raw-name": "Display Name"}` — cosmetic renaming for anywhere a raw identifier (a project slug, a tool name) would otherwise render literally. Optional; only add entries where the raw form actually looks wrong. |
+
+## `pipelines`
+
+Makes `build_cv.py` data-driven instead of hardcoding a single master/template/output-filename
+triple — this is what lets one `application.md` build both the tailored one-pager and the full
+CV. Each entry: `master` (root-relative path), `template` (name under `templates/`, no `.md`),
+`out` (filename written into the company folder).
+
+| Key | Default | Notes |
+|---|---|---|
+| `minimal.master` | `master/master_cv_minimal.md` | |
+| `minimal.template` | `minimal-full` | Only a fallback — `application.md`'s own front-matter `template:` key always wins for this pipeline (per-company template choice, unchanged from before this key existed). |
+| `minimal.out` | `cv-minimal.md` | |
+| `full.master` | `master/master_cv.md` | |
+| `full.template` | `full` | Unlike `minimal`, there's no per-company override — one template for the full CV, no per-application choice needed. |
+| `full.out` | `cv.md` | |
+
+An `application.md` opts into building a pipeline via a `pipelines:` front-matter key
+(comma-separated, e.g. `pipelines: minimal, full`). No `pipelines:` key at all means exactly
+`minimal` — every `application.md` written before this key existed keeps building identically.
+See `docs/SPEC.md`'s "The full CV — id-agnostic rendering".
 
 ## Where this fits
 
