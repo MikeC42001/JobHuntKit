@@ -33,14 +33,16 @@ diffs it — you'd only notice by chance. Scoped to no milestone yet.
 What would settle it: whether this folds into M4 as-is, waits for a later milestone, or turns out
 to be low-value because postings rarely change after being saved in practice.
 
-### Q-003 — Do the extractor `good first issue`s stay open indefinitely, or get built in-house?
+### Q-003 — Which posting-board extractors are actually worth building?
 
 **Status:** open
 
-Greenhouse, Lever, Workday, and Indeed (#3–#6) are filed as `good first issue`s and explicitly
-parked until after M4. If nobody claims them once the repo goes public, is that fine indefinitely
-(the point of a `good first issue` is that it's fine to wait), or is there a point past which the
-maintainer should just build them?
+Greenhouse, Lever, Workday, and Indeed were briefly filed as `good first issue`s (#3–#6, then
+deleted 2026-08-08) — filing them assumed the answer (all four, in that order) before actually
+asking anyone. The real open question: which of these, if any, are worth building at all, and is
+there real demand from someone who'd use them, versus guessing based on which boards seemed
+popular.
 
-What would settle it: revisit after the public flip and see if there's any outside interest at
-all before deciding either way.
+What would settle it: post this as a `question`-labelled issue after the public flip, see which
+boards people actually ask for (or none), and only scope approved extractor work off real
+reactions/comments — not before.

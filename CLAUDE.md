@@ -245,8 +245,10 @@ the original M0–M4 design doc:
 - Optionally, the first `sync.sh pull` into the private `job-hunt/` folder, to prove the
   mechanism round-trips
 
-Extractors for Greenhouse, Lever, Workday, Indeed are filed as `good first issue`s (#3–#6,
-2026-08-08, see `docs/EXTRACTORS.md`) — **explicitly parked for after M4**, not blocking it.
+Extractors for Greenhouse, Lever, Workday, Indeed (see `docs/EXTRACTORS.md`) were briefly filed
+as `good first issue`s (#3–#6, 2026-08-08) then deleted the same day — filing assumed the answer
+before asking. Whether any of these are worth building is now `community/OPEN_QUESTIONS.md`'s
+Q-003, an open question rather than decided work, **not blocking M4**.
 
 **CI coverage gaps closed, 2026-08-08, on `feat/ci-coverage-gaps`** (PR #9, merge commit
 `82bedb7`, all 6 CI jobs green). Auditing what `ci.yml` actually exercised found the leak gate
