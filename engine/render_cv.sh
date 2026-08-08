@@ -49,6 +49,7 @@ if [ -z "$ROOT" ]; then
 fi
 ROOT="$(cd "$ROOT" && pwd)"
 
+# shellcheck source=engine/lib.sh
 source "$SCRIPT_DIR/lib.sh"
 
 if [ "${#FILES[@]}" -eq 0 ]; then
@@ -79,6 +80,8 @@ for src in "${FILES[@]}"; do
   # detected below instead of always printing "wrote" regardless of whether it actually did.
   mtime_before="$(file_mtime "$pdf_path")"
 
+  # shellcheck disable=SC2046 # browser_flags() intentionally returns multiple
+  # space-separated flags meant to word-split into separate argv entries.
   "$BROWSER" $(browser_flags) \
     --print-to-pdf="$(native_path "$pdf_path")" \
     "$(file_url "$html_path")" >/dev/null 2>&1

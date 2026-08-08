@@ -43,6 +43,8 @@ fi
 print_questions() {
   echo "== Open questions (question-labelled issues, ranked by reactions) =="
   local rows
+  # shellcheck disable=SC2086 # REPO_OPT is intentionally unquoted: empty means "pass nothing",
+  # non-empty ("--repo owner/repo") is meant to word-split into two argv entries for gh.
   rows="$(gh issue list $REPO_OPT --label question --state open \
     --search "sort:reactions-+1-desc" \
     --json number,title,reactionGroups,comments,url \
@@ -57,6 +59,7 @@ print_questions() {
 print_open() {
   echo "== Open, approved work (open issues without the 'question' label) =="
   local rows
+  # shellcheck disable=SC2086 # see the same note above print_questions().
   rows="$(gh issue list $REPO_OPT --state open \
     --json number,title,labels,url \
     --jq '[.[] | select([.labels[].name] | index("question") | not)] | .[] | "#\(.number)  \(.title)  [\([.labels[].name] | join(", "))]\n    \(.url)"')"
@@ -73,6 +76,7 @@ print_open() {
 print_resolved() {
   echo "== Resolved (closed issues -> which release shipped them) =="
   local closed
+  # shellcheck disable=SC2086 # see the same note above print_questions().
   closed="$(gh issue list $REPO_OPT --state closed \
     --json number,title,closedByPullRequestsReferences \
     --jq '.[] | "\(.number)\t\(.title)\t\(.closedByPullRequestsReferences[0].number // "")"')"
@@ -92,6 +96,7 @@ print_resolved() {
     fi
 
     local pr_out base merge_sha
+    # shellcheck disable=SC2086 # see the same note above print_questions().
     pr_out="$(gh pr view "$pr" $REPO_OPT --json baseRefName,mergeCommit \
       --jq '"\(.baseRefName)\t\(.mergeCommit.oid // "")"' 2>/dev/null || true)"
 
