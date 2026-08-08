@@ -248,6 +248,19 @@ the original M0–M4 design doc:
 Extractors for Greenhouse, Lever, Workday, Indeed are filed as `good first issue`s (#3–#6,
 2026-08-08, see `docs/EXTRACTORS.md`) — **explicitly parked for after M4**, not blocking it.
 
+**CI coverage gaps closed, 2026-08-08, on `feat/ci-coverage-gaps`** (PR #9, merge commit
+`82bedb7`, all 6 CI jobs green). Auditing what `ci.yml` actually exercised found the leak gate
+wasn't actually a CI gate — `audit_public.py`'s logic was unit-tested but nothing in CI ever ran
+it against a PR's own tree, so enforcement was 100% local (opt-in pre-commit hook or a manual
+`CONTRIBUTING.md` step). `lint` now runs it for real. Also added: `shellcheck -x` for every
+tracked `.sh` file (real findings fixed — `SC1091` via `source=` hints, `SC2046`/`SC2086` via
+narrow disable comments where word-splitting is genuinely intentional, `SC2015` in
+`native_path()`), `node --check` for the four tracked JS converters in `render-matrix`, and
+`tests/test_community.py` (hermetic subprocess tests for `community.sh`, including a regression
+test pinning its read-only guarantee). One unrelated macOS `render-matrix` Chromium flake
+(`Trace/BPT trap`) hit mid-branch — re-ran the job alone, passed clean, confirmed not a
+regression before merging.
+
 **`community/` issue-orchestration folder merged to `dev` same day** (PR #8, merge commit
 `738e569`, all 6 CI jobs green). Prompted by filing #3–#6 without a pre-approval step earlier the
 same session — new standing rule, recorded in `CLAUDE.md` (this file, above), `AGENTS.md`,
@@ -282,5 +295,6 @@ safe — actually doing that migration is still M4, deliberately last.
 
 > Last updated: 2026-08-08 (deferred-M3 full-CV pipeline complete — PR #2 render_cv.sh/
 > render_cv_photo.sh id-agnostic rendering, PR #7 master_cv.md + dual build_cv.py pipeline,
-> PR #8 community/ issue-orchestration folder + GitHub-issue approval rule — all merged to dev;
-> extractor issues filed, all branches cleaned up)
+> PR #8 community/ issue-orchestration folder + GitHub-issue approval rule, PR #9 CI coverage
+> gaps closed (audit_public.py + shellcheck + node --check + community.sh tests) — all merged to
+> dev; extractor issues filed, all branches cleaned up)
