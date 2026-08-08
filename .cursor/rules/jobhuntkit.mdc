@@ -23,4 +23,8 @@ For the `application.md`/template/master format contract, see
 [docs/SPEC.md](../../docs/SPEC.md). For `config.json`, see
 [docs/CONFIG.md](../../docs/CONFIG.md).
 
+Working on this repo itself rather than a user's CV content? See
+[community/README.md](../../community/README.md) — never open, label, or close a GitHub issue
+without the maintainer's explicit approval first.
+
 This file is a pointer, not a copy — if it looks stale, the files above are the source of truth.

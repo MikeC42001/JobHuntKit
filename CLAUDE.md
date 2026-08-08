@@ -16,6 +16,17 @@ the engine itself.
 
 ---
 
+## Working conventions
+
+**Never open a GitHub issue without Miguel's explicit approval in the current conversation.**
+Draft the body, show it, wait for a yes — then (and only then) `gh issue create`. Same rule for
+`gh issue edit --add-label`/`--remove-label` and `gh issue close`: those are the two approval
+gates in `community/README.md`'s lifecycle, and an issue is public, permanent, and notifies
+watchers, so it's an outward-facing action, not a note-to-self. **Reading is unrestricted** —
+`gh issue list`/`gh issue view` any time. See `community/README.md` for the full open-question →
+issue → resolved lifecycle and `community/community.sh` for reading it back (read-only by
+construction — no write calls anywhere in that script).
+
 ## Architecture in one line
 
 The engine (`engine/`) never contains personal data — everything a person writes lives at a
