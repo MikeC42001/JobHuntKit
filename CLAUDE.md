@@ -25,7 +25,7 @@ gates in `community/README.md`'s lifecycle, and an issue is public, permanent, a
 watchers, so it's an outward-facing action, not a note-to-self. **Reading is unrestricted** —
 `gh issue list`/`gh issue view` any time. See `community/README.md` for the full open-question →
 issue → resolved lifecycle and `community/community.sh` for reading it back (read-only by
-construction — no write calls anywhere in that script).
+construction — no write calls anywhere in that script; `community.sh status` confirms).
 
 ## Architecture in one line
 
@@ -248,6 +248,20 @@ the original M0–M4 design doc:
 Extractors for Greenhouse, Lever, Workday, Indeed are filed as `good first issue`s (#3–#6,
 2026-08-08, see `docs/EXTRACTORS.md`) — **explicitly parked for after M4**, not blocking it.
 
+**`community/` issue-orchestration folder merged to `dev` same day** (PR #8, merge commit
+`738e569`, all 6 CI jobs green). Prompted by filing #3–#6 without a pre-approval step earlier the
+same session — new standing rule, recorded in `CLAUDE.md` (this file, above), `AGENTS.md`,
+`.cursor/rules/jobhuntkit.mdc`, and `community/README.md`: never open, label, or close a GitHub
+issue without explicit approval first; reading stays unrestricted. Three-stage lifecycle —
+`community/OPEN_QUESTIONS.md` (hand-written) → `question`-labelled issue (ranked by reactions,
+`sort:reactions-+1-desc`) → promoted to scoped work → resolution **derived**, not written
+(`closedByPullRequestsReferences` → PR's merge commit → `git tag --contains`). `community/
+community.sh` is a read-only `gh`/`git` wrapper, verified structurally incapable of writing to
+GitHub. Also corrected `README.md`'s false "tracked as milestones" claim (zero GitHub Milestones
+exist on this repo) to point at `community/` instead. `engine.manifest` gained a `community/`
+line. Full design rationale (why Discussions/Milestones were rejected, the verification
+approach) in `MEMORY.md`'s `project_jobhuntkit` entry.
+
 ## Relationship to the private `job-hunt/` folder
 
 Deliberately **not** dogfooded yet, and diverging by design rather than forking/syncing from day
@@ -268,4 +282,5 @@ safe — actually doing that migration is still M4, deliberately last.
 
 > Last updated: 2026-08-08 (deferred-M3 full-CV pipeline complete — PR #2 render_cv.sh/
 > render_cv_photo.sh id-agnostic rendering, PR #7 master_cv.md + dual build_cv.py pipeline,
-> both merged to dev; extractor issues filed, all branches cleaned up)
+> PR #8 community/ issue-orchestration folder + GitHub-issue approval rule — all merged to dev;
+> extractor issues filed, all branches cleaned up)
