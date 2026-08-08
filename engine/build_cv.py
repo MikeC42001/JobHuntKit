@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""build_cv.py — assembles a company's cv-minimal.md from master + template + application.md.
+"""build_cv.py — assembles a company's cv-minimal.md (and optionally cv.md) from a master +
+template + application.md.
 
-Three inputs, one generated output (see docs/SPEC.md):
+Three inputs, one generated output per pipeline (see docs/SPEC.md):
 
-    master/master_cv_minimal.md (what CAN be said, locked wording by @id)
+    master/master_cv_minimal.md (what CAN be said, locked wording by @id)  -- minimal pipeline
+    master/master_cv.md         (the complete inventory, same ids)         -- full pipeline
     templates/<name>.md         (which slots exist, in what order, which are locked)
     applications/offer-pages/<Company>/application.md
                                  (the pitch: tagline, About me, skills, project selection — the
@@ -11,6 +13,7 @@ Three inputs, one generated output (see docs/SPEC.md):
         │
         ▼
     <Company>/cv-minimal.md     (GENERATED — never hand-edit; same status as the rendered PDF)
+    <Company>/cv.md             (GENERATED, only if application.md opts in — see "pipelines" below)
 
 Why a generator and not just careful copy-pasting: hand-copying a master into each application
 means every wording tweak has to be re-applied by hand everywhere it appears, and it's easy to
@@ -21,6 +24,12 @@ No YAML/TOML dependency: application.md uses the same "## Heading" convention as
 markdown file in this toolkit, parsed with the same split-on-"^## "-pattern the renderers
 already use. Front matter (template/company/role) is the one exception — a minimal
 "key: value" block between "---" lines, just enough to pick a template.
+
+One application.md, two possible pipelines: an optional "pipelines:" front-matter key
+(comma-separated, e.g. "pipelines: minimal, full") selects which of config.json's "pipelines"
+entries to build. No such key at all means exactly ["minimal"] — every application.md written
+before this key existed builds identically to before. See resolve_pipelines_for() and
+config.py's Config.pipeline().
 
 Usage:
     python engine/build_cv.py "applications/offer-pages/Acme"     # one company, writes the file
@@ -321,11 +330,30 @@ def find_application_dirs(cfg):
     )
 
 
-def build_company(cfg, company_dir, master, check_only):
+def resolve_pipelines_for(front_matter):
+    """Which pipelines to build for one company, from application.md's optional "pipelines:"
+    front-matter key (comma-separated, e.g. "minimal, full"). Absent entirely -> exactly
+    ["minimal"], so every application.md written before this key existed keeps building
+    identically — this is the whole backward-compatibility guarantee in one function."""
+    raw = front_matter.get("pipelines")
+    if not raw:
+        return ["minimal"]
+    return [p.strip() for p in raw.split(",") if p.strip()]
+
+
+def build_company(cfg, company_dir, master, check_only, pipeline="minimal"):
     app_path = os.path.join(company_dir, "application.md")
     app = parse_application(app_path)
 
-    template_name = app["front_matter"]["template"]
+    if pipeline == "minimal":
+        # Template stays a per-application choice, as it always has been — application.md's own
+        # front matter picks it, not config. Every other pipeline's template is a fixed config
+        # default (see cfg.pipeline()): there's normally exactly one full-CV template, so there's
+        # nothing per-company to choose.
+        template_name = app["front_matter"]["template"]
+    else:
+        template_name = cfg.pipeline(pipeline)["template"]
+
     template_path = os.path.join(cfg.templates_dir, template_name + ".md")
     if not os.path.isfile(template_path):
         raise BuildError(f"{company_dir}: template '{template_name}' not found at {template_path}")
@@ -335,10 +363,12 @@ def build_company(cfg, company_dir, master, check_only):
     company_label = app["front_matter"].get("company", os.path.basename(company_dir))
     output = build_one(template_text, master, app, company_label)
 
-    out_path = os.path.join(company_dir, "cv-minimal.md")
+    out_path = os.path.join(company_dir, cfg.pipeline(pipeline)["out"])
     line_count = output.count("\n")
     warning = None
-    if line_count > cfg.soft_line_budget:
+    # The soft line budget is a one-page-fit proxy — meaningless for the full pipeline, which has
+    # no page target at all.
+    if pipeline == "minimal" and line_count > cfg.soft_line_budget:
         warning = f"{line_count} lines, over the {cfg.soft_line_budget}-line soft budget"
 
     if check_only:
@@ -376,7 +406,9 @@ def main():
     if not os.path.isfile(cfg.master_path):
         print(f"build_cv: master not found at {cfg.master_path}", file=sys.stderr)
         return 1
-    master = parse_master(cfg.master_path)
+    masters = {"minimal": parse_master(cfg.master_path)}
+    if os.path.isfile(cfg.master_full_path):
+        masters["full"] = parse_master(cfg.master_full_path)
 
     targets = find_application_dirs(cfg) if args.all else [os.path.abspath(args.company_dir)]
     if not targets:
@@ -387,21 +419,40 @@ def main():
     warnings = []
     for company_dir in targets:
         try:
-            label, diff, warning = build_company(cfg, company_dir, master, args.check)
+            app_peek = parse_application(os.path.join(company_dir, "application.md"))
         except BuildError as e:
             errors.append(str(e))
             continue
-        if warning:
-            warnings.append(f"{label}: {warning}")
-        if args.check:
-            if diff:
-                print(f"--- {label} ---")
-                sys.stdout.writelines(diff)
-                print()
+        pipeline_names = resolve_pipelines_for(app_peek["front_matter"])
+
+        for pipeline in pipeline_names:
+            if pipeline not in masters:
+                errors.append(
+                    f"{company_dir}: pipeline '{pipeline}' requested but its master "
+                    f"({cfg.pipeline(pipeline)['master']}) doesn't exist"
+                )
+                continue
+            try:
+                label, diff, warning = build_company(
+                    cfg, company_dir, masters[pipeline], args.check, pipeline=pipeline
+                )
+            except BuildError as e:
+                errors.append(str(e))
+                continue
+            # No tag for the default (minimal) pipeline — output stays byte-identical to before
+            # this feature existed, for the common single-pipeline case.
+            tag = "" if pipeline == "minimal" else f" [{pipeline}]"
+            if warning:
+                warnings.append(f"{label}{tag}: {warning}")
+            if args.check:
+                if diff:
+                    print(f"--- {label}{tag} ---")
+                    sys.stdout.writelines(diff)
+                    print()
+                else:
+                    print(f"{label}{tag}: no changes")
             else:
-                print(f"{label}: no changes")
-        else:
-            print(f"{label}: written")
+                print(f"{label}{tag}: written")
 
     if warnings:
         print()

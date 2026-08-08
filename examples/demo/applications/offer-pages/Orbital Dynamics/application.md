@@ -1,5 +1,6 @@
 ---
 template: minimal-full
+pipelines: minimal, full
 company: Orbital Dynamics
 role: Senior Product Engineer
 ---
