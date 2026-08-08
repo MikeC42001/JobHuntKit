@@ -18,5 +18,17 @@
     "heading_aliases": {}
   },
   "limits": { "soft_line_budget": 57, "max_pages": 1 },
-  "display_names": {}
+  "display_names": {},
+  "pipelines": {
+    "minimal": {
+      "master": "master/master_cv_minimal.md",
+      "template": "minimal-full",
+      "out": "cv-minimal.md"
+    },
+    "full": {
+      "master": "master/master_cv.md",
+      "template": "full",
+      "out": "cv.md"
+    }
+  }
 }

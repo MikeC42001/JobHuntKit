@@ -60,6 +60,18 @@ DEFAULT_CONFIG = {
     },
     "limits": {"soft_line_budget": 57, "max_pages": 1},
     "display_names": {},
+    "pipelines": {
+        "minimal": {
+            "master": "master/master_cv_minimal.md",
+            "template": "minimal-full",
+            "out": "cv-minimal.md",
+        },
+        "full": {
+            "master": "master/master_cv.md",
+            "template": "full",
+            "out": "cv.md",
+        },
+    },
 }
 
 
@@ -166,8 +178,38 @@ class Config:
         return os.path.join(self.root, "master")
 
     @property
+    def pipelines(self):
+        """The "pipelines" config block: {name: {"master": ..., "template": ..., "out": ...}},
+        each value still relative to root — see pipeline() for the resolved (absolute-master)
+        form callers actually want."""
+        return self.get("pipelines", {})
+
+    def pipeline(self, name):
+        """Resolved pipeline info for e.g. "minimal" or "full": {"master": <abs path>,
+        "template": <name, no .md>, "out": <filename>}. Raises KeyError for an unknown pipeline
+        name — every caller passes a name it already knows is valid (a CLI --pipeline choice, or
+        one of build_cv's own front-matter-parsed selections)."""
+        p = self.pipelines.get(name)
+        if p is None:
+            raise KeyError(
+                f"unknown pipeline: {name!r} (check config.json's \"pipelines\" block)"
+            )
+        return {
+            "master": os.path.join(self.root, p["master"]),
+            "template": p["template"],
+            "out": p["out"],
+        }
+
+    @property
     def master_path(self):
-        return os.path.join(self.master_dir, "master_cv_minimal.md")
+        """The minimal pipeline's master — kept as its own property since most callers only
+        ever care about this one; equivalent to pipeline("minimal")["master"]."""
+        return self.pipeline("minimal")["master"]
+
+    @property
+    def master_full_path(self):
+        """The full pipeline's master; equivalent to pipeline("full")["master"]."""
+        return self.pipeline("full")["master"]
 
     @property
     def templates_dir(self):

@@ -9,8 +9,9 @@ it first for root-finding (locate `config.json` + sibling `engine/build_cv.py`; 
 `python scripts/init_workspace.py`), which files an agent may write, and the never-auto-commit
 rule.
 
-For setting up or evolving CV content (`profile/background.md`,
-`master/master_cv_minimal.md`), follow [agents/cv-setup.md](../../agents/cv-setup.md).
+For setting up or evolving CV content (`profile/background.md`, and two masters —
+`master/master_cv.md` the primary/complete inventory, `master/master_cv_minimal.md` its
+condensation), follow [agents/cv-setup.md](../../agents/cv-setup.md).
 
 For tailoring a CV to a specific posting — scan, draft, build, validate, render, and stage,
 plus an optional cover letter — follow [agents/cv-tailor.md](../../agents/cv-tailor.md).

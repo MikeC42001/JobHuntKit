@@ -34,43 +34,51 @@ recent Node.js, and one Chromium-family browser. Windows users: run it from Git 
 
 ## How it works
 
-```
-master/master_cv_minimal.md   (everything you could say, tagged with @id blocks)
-templates/minimal-full.md     (which slots exist, in what order, which are locked)
-applications/offer-pages/<Company>/application.md
-                               (the pitch for this one posting — tagline, About me,
-                                which projects, what to omit and why)
-        │
-        ▼   engine/build_cv.py
-applications/offer-pages/<Company>/cv-minimal.md
-        │
-        ▼   engine/render_cv_minimal.sh
-applications/offer-pages/<Company>/generate-pdfs/cv-minimal.pdf
-```
-
-`application.md` is the only file you hand-edit per application. `cv-minimal.md` and the PDF
-are generated — edit `application.md` and re-run instead of touching them, or the next build
-silently overwrites your change.
-
-There's a second, simpler path for the **full CV** — the long-form document you keep current and
-hand people, as opposed to the one-page, per-posting `cv-minimal.pdf` above. No build step, no
-template: `render_cv.sh` and `render_cv_photo.sh` render *any* CV markdown, comments and all,
-including a master file pointed at directly:
+A chain, not two unrelated files: `master/master_cv.md` is the primary master — the complete
+inventory, written as a real document. `master/master_cv_minimal.md` is a *condensation* of it —
+same `@id`s, terser wording, one-page discipline. One `application.md` per company drives both:
 
 ```
-master/master_cv_minimal.md   (or any hand-written CV markdown — no @id scheme required)
-        │
-        ▼   engine/render_cv.sh          (single-column, ATS-safe, no photo)
-        ▼   engine/render_cv_photo.sh    (two-column, circular photo)
-master/generate-pdfs/cv.pdf
-master/generate-pdfs/cv-photo.pdf
+master/master_cv.md                                    master/master_cv_minimal.md
+(primary — complete inventory,          condensed to   (terser wording, same @id namespace)
+ written as a real document)          ───────────────>
+        │                                                       │
+        ▼   templates/full.md                                  ▼   templates/minimal-full.md
+        │   (roomier, generous by default)                      │   (one-page discipline)
+        │                                                       │
+        └──────────────────┬────────────────────────────────────┘
+                            │
+        applications/offer-pages/<Company>/application.md
+        (the pitch: tagline, About me, which projects, what to omit and why —
+         drives BOTH pipelines; opt into "full" via a "pipelines: minimal, full"
+         front-matter key, default is "minimal" only)
+                            │
+              ┌─────────────┴─────────────┐
+              ▼   engine/build_cv.py       ▼   engine/build_cv.py
+   <Company>/cv-minimal.md                 <Company>/cv.md
+              │                                         │
+   engine/render_cv_minimal.sh    engine/render_cv.sh / render_cv_photo.sh
+              ▼                                         ▼
+   .../generate-pdfs/cv-minimal.pdf     .../generate-pdfs/cv.pdf · cv-photo.pdf
 ```
 
-In one line: **`cv-minimal.pdf` is what you send; the full CV is what you have.** Both renderers
-strip `<!-- ... -->` comments themselves (so a master's `<!-- @id -->` markers never reach the
-PDF) and honor a `<!-- render:stop -->` tag for anything that shouldn't render at all, like a
-master's "Notes for tailoring" section — see `docs/SPEC.md`'s "id-agnostic rendering" section for
-the full contract. There's no validator on this path; `check_cv.py` runs only where `@id`s exist.
+In one line: **`cv-minimal.pdf` is what you send; the full CV is what you have.**
+`application.md` is the only file you hand-edit per application — every `cv*.md` and every
+rendered PDF is generated; edit `application.md` and re-run instead of touching them, or the next
+build silently overwrites your change.
+
+There's also a simpler, build-free path for the full CV: `render_cv.sh`/`render_cv_photo.sh` are
+**id-agnostic** — point either straight at `master/master_cv.md` (or any hand-written CV
+markdown, no `@id` scheme required) and get a PDF, no `application.md`, no `build_cv.py` step.
+Both strip `<!-- ... -->` comments themselves (so a master's `<!-- @id -->` markers never reach
+the PDF) and honor a `<!-- render:stop -->` tag for anything that shouldn't render at all, like a
+master's "Notes for tailoring" section. Use the built `cv.md` path when you want per-company
+selection (`## Include`/`## Omit`, same as the tailored pipeline); point at the master directly
+when you just want the whole thing, right now, no per-company anything.
+
+There's no validator on the direct-render path — `check_cv.py` runs only where `@id`s exist,
+i.e. on a built `cv-minimal.md`/`cv.md` (`--pipeline full` for the latter). See `docs/SPEC.md`'s
+"The full CV — id-agnostic rendering" for the full contract.
 
 ## Quickstart with your own data
 
@@ -78,9 +86,10 @@ the full contract. There's no validator on this path; `check_cv.py` runs only wh
 python scripts/init_workspace.py    # scaffolds config.json, master/, profile/, applications/
 ```
 
-Fill in `config.json`, `profile/background.md`, and `master/master_cv_minimal.md`, decide your
-locked spine, then build/validate/render/verify the same way `demo.sh` does. Full walkthrough,
-in order: **[docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)**.
+Fill in `config.json`, `profile/background.md`, and `master/master_cv.md` (then condense it into
+`master/master_cv_minimal.md` — same ids, terser wording), decide your locked spine, then
+build/validate/render/verify the same way `demo.sh` does. Full walkthrough, in order:
+**[docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)**.
 
 `--root` can point anywhere, including outside this checkout entirely — your own private repo,
 for instance — so the engine never needs to touch your data directly:
@@ -101,8 +110,8 @@ Running the whole pipeline by hand, no agent involved: [docs/NO-AI.md](docs/NO-A
 | `scripts/init_workspace.py` | Scaffolds a fresh data root from `templates/` — config.json, master/, profile/, applications/ |
 | `engine/scan_applications.py` | Classifies every company as NEW/CURRENT/STALE/SENT/DECLINED, independently for the CV and the cover letter |
 | `engine/extract_posting.py` | Turns a saved job-posting page (or `.txt`/pasted text) into a skimmable dump, via the pluggable `engine/extractors/` registry — see `docs/EXTRACTORS.md` |
-| `engine/build_cv.py` | Assembles `cv-minimal.md` from the master + template + `application.md` |
-| `engine/check_cv.py` | Validates the locked spine landed correctly (`structure`, the default) and reports what's present/omitted/silently-missing per application (`--coverage`) |
+| `engine/build_cv.py` | Assembles `cv-minimal.md` (and `cv.md`, if `application.md` opts in — see `pipelines:` in `docs/CONFIG.md`) from a master + template + `application.md` |
+| `engine/check_cv.py` | Validates the locked spine landed correctly (`structure`, the default) and reports what's present/omitted/silently-missing per application (`--coverage`); `--pipeline full` checks `cv.md` instead |
 | `engine/verify_cvs.py` | Confirms a rendered PDF is exactly one page (or whatever `limits.max_pages` says) |
 | `engine/render_cv_minimal.sh` | Renders `cv-minimal.md` to a one-column PDF with a circular photo |
 | `engine/render_cv.sh` | Renders any CV markdown (built, a master, or hand-written) to a single-column, ATS-safe PDF — no build step required |
@@ -133,15 +142,18 @@ pytest suite covers the golden build, the structure/coverage checkers, the leak 
 scaffolding script, the scan/collect/extractor logic, and the email flattener (see Running tests
 below), and CI (`.github/workflows/ci.yml`) runs it on every push — lint, the pytest suite on
 ubuntu/macos/windows, and a render-matrix job proving `demo.sh` actually works end-to-end on
-ubuntu and macOS, not just the Windows machine it was built on. Now also in: the full-CV pipeline
-— `render_cv.sh`/`render_cv_photo.sh`, id-agnostic renderers that clean their own input (comment
-stripping, a `<!-- render:stop -->` tag), so a master file renders directly with no build step.
-`verify_cvs.py --max-pages` lets a multi-page artifact be checked (or the gate disabled entirely)
-without touching the global one-page default. Not yet built: extractors for Greenhouse/Lever/
-Workday/Indeed (filed as `good first issue`s), a generated ChatGPT-paste variant of the agent
-instructions, a dedicated `master_cv.md`/`templates/full.md` pair with its own `build_cv.py`
-pipeline (today the full-CV renderers work directly off `master_cv_minimal.md`), and a roomier
-spine-only template. Tracked as milestones in this repo's issues.
+ubuntu and macOS, not just the Windows machine it was built on. Now also in: the full-CV
+pipeline — two masters (`master_cv.md` primary, `master_cv_minimal.md` its condensation, shared
+`@id` namespace with an inheritance rule pinned by tests), a second `build_cv.py`/`check_cv.py`
+pipeline (`cv.md`, same per-company selections as `cv-minimal.md`, opt in via an
+`application.md`'s `pipelines:` front-matter key), and id-agnostic renderers
+(`render_cv.sh`/`render_cv_photo.sh`) that clean their own input (comment stripping, a
+`<!-- render:stop -->` tag) so a master file also renders directly with no build step at all.
+`verify_cvs.py --max-pages` lets a multi-page artifact be checked (or the gate disabled
+entirely) without touching the global one-page default. Not yet built: extractors for
+Greenhouse/Lever/Workday/Indeed (filed as `good first issue`s), a generated ChatGPT-paste
+variant of the agent instructions, and a roomier spine-only template. Tracked as milestones in
+this repo's issues.
 
 ## Running tests
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""check_cv.py — structure gate + coverage report for cv-minimal.md files.
+"""check_cv.py — structure gate + coverage report for cv-minimal.md (and optionally cv.md) files.
 
 Two independent checks, matching verify_cvs.py's style (per-file line, summary, exit 1 on
 failure).
@@ -21,11 +21,18 @@ identify them, which ids must appear verbatim, which education titles need a det
 from config.json's `spine` block — see docs/CONFIG.md. A fresh clone with no spine configured
 prints a NOT CONFIGURED banner instead of a false "all OK": see cfg.spine_configured.
 
+--pipeline full switches both checks to cv.md / master_cv.md instead of cv-minimal.md /
+master_cv_minimal.md. Same spine.json config either way — locked order, verbatim ids, and
+education titles aren't per-pipeline. Coverage's SILENT concept mostly evaporates for the full
+pipeline: templates/full.md marks most of what the minimal template gates behind ## Include as
+unconditional, so there's usually nothing left to omit.
+
 Usage:
     python engine/check_cv.py                                # structure sweep, every company
     python engine/check_cv.py applications/offer-pages/Acme    # structure check, one company
     python engine/check_cv.py --coverage                       # coverage sweep, every migrated company
     python engine/check_cv.py --coverage applications/offer-pages/Acme
+    python engine/check_cv.py --pipeline full                  # structure sweep of cv.md instead
     python engine/check_cv.py --root path/to/your/data
 
 Exit code: structure mode returns 1 if any company FAILs. Coverage mode always returns 0 — a
@@ -104,8 +111,8 @@ def identify(cfg, title):
 # Structure check
 # ---------------------------------------------------------------------------
 
-def check_structure(cfg, company_dir, alias_map):
-    path = os.path.join(company_dir, "cv-minimal.md")
+def check_structure(cfg, company_dir, alias_map, pipeline="minimal"):
+    path = os.path.join(company_dir, cfg.pipeline(pipeline)["out"])
     if not os.path.isfile(path):
         return [f"MISSING {path}"]
 
@@ -158,7 +165,10 @@ def check_structure(cfg, company_dir, alias_map):
             )
 
     # --- Verbatim ids: each one appears byte-for-byte somewhere in the rendered output ---
-    master = parse_master(cfg.master_path)
+    # Checked against this pipeline's own master — the full pipeline's wording differs from the
+    # minimal's (same id, fuller text), so cross-checking against the wrong master would always
+    # fail.
+    master = parse_master(cfg.pipeline(pipeline)["master"])
     for vid in cfg.verbatim_ids:
         expected = master.get(vid)
         if expected is None:
@@ -170,14 +180,15 @@ def check_structure(cfg, company_dir, alias_map):
     return failures
 
 
-def find_all_company_dirs(cfg):
+def find_all_company_dirs(cfg, pipeline="minimal"):
+    out_name = cfg.pipeline(pipeline)["out"]
     return sorted(
         os.path.dirname(p)
-        for p in glob.glob(os.path.join(cfg.offer_pages_dir, "*", "cv-minimal.md"))
+        for p in glob.glob(os.path.join(cfg.offer_pages_dir, "*", out_name))
     )
 
 
-def run_structure(cfg, targets):
+def run_structure(cfg, targets, pipeline="minimal"):
     if not cfg.spine_configured:
         print("check_cv: NOT CONFIGURED — no locked spine, required education titles, or")
         print("  verbatim ids set in config.json's \"spine\" block. Structure checking is a")
@@ -188,7 +199,7 @@ def run_structure(cfg, targets):
     total_failures = 0
     for company_dir in targets:
         label = os.path.basename(company_dir)
-        failures = check_structure(cfg, company_dir, alias_map)
+        failures = check_structure(cfg, company_dir, alias_map, pipeline=pipeline)
         if failures:
             print(label)
             for f in failures:
@@ -229,11 +240,26 @@ def count_locked_slots(template_text):
     return count
 
 
-def run_coverage(cfg, targets):
-    master = parse_master(cfg.master_path)
+OPTIONAL_TOKEN_RE = re.compile(r"\{\{@([\w-]+)\?(?:section:[^}]+)?\}\}")
+
+
+def gated_optional_ids(template_text, optional_ids):
+    """Which of config.json's spine.optional_ids this specific template actually gates behind
+    {{@id?}} / {{@id?section:H}} — not all of them necessarily are. templates/full.md marks most
+    of what templates/minimal-full.md gates as unconditional {{@id}} instead (the full CV is
+    generous by default, no page budget forcing a choice), so those ids are PRESENT regardless
+    of ## Include/## Omit for that pipeline — reporting them as DELIBERATE/SILENT would be
+    actively wrong, not just noisy, since they're not actually omittable there."""
+    cleaned = COMMENT_RE.sub("", template_text)
+    gated = {m.group(1) for m in OPTIONAL_TOKEN_RE.finditer(cleaned)}
+    return [pid for pid in optional_ids if pid in gated]
+
+
+def run_coverage(cfg, targets, pipeline="minimal"):
+    master = parse_master(cfg.pipeline(pipeline)["master"])
     proj_ids = sorted(k for k in master if k.startswith("proj-"))
-    optional_ids = cfg.optional_ids
-    template_locked_count_cache = {}
+    all_optional_ids = cfg.optional_ids
+    template_cache = {}  # template_name -> (locked_count, gated_optional_ids)
 
     for company_dir in targets:
         label = os.path.basename(company_dir)
@@ -247,6 +273,25 @@ def run_coverage(cfg, targets):
         used_proj_ids = {pid for pid, _ in app["projects"]}
         omit = app["omit"]
         include = set(app["include_ids"])
+
+        # Same asymmetry as build_cv.build_company(): the minimal pipeline's template is a
+        # per-application choice (application.md's own front matter); every other pipeline's is
+        # a fixed config default, since there's normally exactly one full-CV template.
+        if pipeline == "minimal":
+            template_name = app["front_matter"].get("template")
+        else:
+            template_name = cfg.pipeline(pipeline)["template"]
+        if template_name not in template_cache:
+            template_path = os.path.join(cfg.templates_dir, f"{template_name}.md")
+            locked_count = 0
+            optional_ids = []
+            if template_name and os.path.isfile(template_path):
+                with open(template_path, "r", encoding="utf-8") as f:
+                    template_text = f.read()
+                locked_count = count_locked_slots(template_text)
+                optional_ids = gated_optional_ids(template_text, all_optional_ids)
+            template_cache[template_name] = (locked_count, optional_ids)
+        locked_count, optional_ids = template_cache[template_name]
 
         rows = []  # (id, state, reason_or_None)
         for pid in optional_ids:
@@ -263,16 +308,6 @@ def run_coverage(cfg, targets):
                 rows.append((pid, "DELIBERATE", omit[pid]))
             else:
                 rows.append((pid, "SILENT", None))
-
-        template_name = app["front_matter"].get("template")
-        if template_name not in template_locked_count_cache:
-            template_path = os.path.join(cfg.templates_dir, f"{template_name}.md")
-            locked_count = 0
-            if template_name and os.path.isfile(template_path):
-                with open(template_path, "r", encoding="utf-8") as f:
-                    locked_count = count_locked_slots(f.read())
-            template_locked_count_cache[template_name] = locked_count
-        locked_count = template_locked_count_cache[template_name]
 
         present = sum(1 for _, s, _ in rows if s == "PRESENT")
         total = len(rows) + locked_count
@@ -304,22 +339,33 @@ def main():
     )
     parser.add_argument("company_dir", nargs="?", help="path to one applications/offer-pages/<Company> folder")
     parser.add_argument("--coverage", action="store_true", help="run the coverage report instead of the structure check")
+    parser.add_argument(
+        "--pipeline",
+        choices=["minimal", "full"],
+        default="minimal",
+        help="which pipeline to check — cv-minimal.md (default) or the full CV's cv.md",
+    )
     args = parser.parse_args()
 
     cfg = cfgmod.resolve(args.root)
 
-    if not os.path.isfile(cfg.master_path):
-        print(f"check_cv: master not found at {cfg.master_path}", file=sys.stderr)
+    master_path = cfg.pipeline(args.pipeline)["master"]
+    if not os.path.isfile(master_path):
+        print(f"check_cv: master not found at {master_path}", file=sys.stderr)
         return 1
 
-    targets = [os.path.abspath(args.company_dir)] if args.company_dir else find_all_company_dirs(cfg)
+    targets = (
+        [os.path.abspath(args.company_dir)]
+        if args.company_dir
+        else find_all_company_dirs(cfg, pipeline=args.pipeline)
+    )
     if not targets:
         print("check_cv: no companies found.", file=sys.stderr)
         return 1
 
     if args.coverage:
-        return run_coverage(cfg, targets)
-    return run_structure(cfg, targets)
+        return run_coverage(cfg, targets, pipeline=args.pipeline)
+    return run_structure(cfg, targets, pipeline=args.pipeline)
 
 
 if __name__ == "__main__":
