@@ -6,7 +6,8 @@ applications.
 
 ![Sample generated CV](examples/demo/output/cv-minimal.png)
 
-*(Robin Vale and Orbital Dynamics are fictional — the image above is `demo.sh`'s output.)*
+*(Robin Vale and Orbital Dynamics are fictional — the image above is a snapshot of `demo.sh`'s
+output, committed at `examples/demo/output/` since `generate-pdfs/` itself is gitignored.)*
 
 ## Why
 
@@ -57,6 +58,8 @@ master/master_cv.md                                    master/master_cv_minimal.
               ▼   engine/build_cv.py       ▼   engine/build_cv.py
    <Company>/cv-minimal.md                 <Company>/cv.md
               │                                         │
+   engine/check_cv.py               engine/check_cv.py --pipeline full
+              │                                         │
    engine/render_cv_minimal.sh    engine/render_cv.sh / render_cv_photo.sh
               ▼                                         ▼
    .../generate-pdfs/cv-minimal.pdf     .../generate-pdfs/cv.pdf · cv-photo.pdf
@@ -83,7 +86,8 @@ i.e. on a built `cv-minimal.md`/`cv.md` (`--pipeline full` for the latter). See 
 ## Quickstart with your own data
 
 ```bash
-python scripts/init_workspace.py    # scaffolds config.json, master/, profile/, applications/
+python scripts/init_workspace.py    # scaffolds config.json, master/, profile/, applications/,
+                                     # templates/, images/, produced/ from templates/
 ```
 
 Fill in `config.json`, `profile/background.md`, and `master/master_cv.md` (then condense it into
@@ -107,20 +111,28 @@ Running the whole pipeline by hand, no agent involved: [docs/NO-AI.md](docs/NO-A
 
 | Script | Does |
 |---|---|
-| `scripts/init_workspace.py` | Scaffolds a fresh data root from `templates/` — config.json, master/, profile/, applications/ |
+| `demo.sh` | Runs the whole pipeline end to end against `examples/demo/` — the 60-second demo above |
+| `scripts/init_workspace.py` | Scaffolds a fresh data root from `templates/` — config.json, master/, profile/, applications/, templates/, images/, produced/ |
+| `scripts/make_avatar.py` | One-off helper: draws a simple initials-in-a-circle placeholder avatar PNG, for anyone who wants a photo without a stock image or licensing question. Requires Pillow (`pip install pillow`), a dev-only dependency — not part of the render pipeline |
+| `scripts/audit_public.py` | The leak gate — refuses to `sync.sh push` (and fails CI's `lint` job) if personal data, an unexpected binary, or an absolute path would leave the engine |
+| `scripts/sync.sh` | Manifest-bounded `pull`/`push` between a canonical checkout and any data root — see `engine.manifest` |
+| `scripts/install_hooks.sh` | Wires `audit_public.py` into a pre-commit hook (one-time, per clone) |
 | `engine/scan_applications.py` | Classifies every company as NEW/CURRENT/STALE/SENT/DECLINED, independently for the CV and the cover letter |
 | `engine/extract_posting.py` | Turns a saved job-posting page (or `.txt`/pasted text) into a skimmable dump, via the pluggable `engine/extractors/` registry — see `docs/EXTRACTORS.md` |
 | `engine/build_cv.py` | Assembles `cv-minimal.md` (and `cv.md`, if `application.md` opts in — see `pipelines:` in `docs/CONFIG.md`) from a master + template + `application.md` |
 | `engine/check_cv.py` | Validates the locked spine landed correctly (`structure`, the default) and reports what's present/omitted/silently-missing per application (`--coverage`); `--pipeline full` checks `cv.md` instead |
-| `engine/verify_cvs.py` | Confirms a rendered PDF is exactly one page (or whatever `limits.max_pages` says) |
-| `engine/render_cv_minimal.sh` | Renders `cv-minimal.md` to a one-column PDF with a circular photo |
-| `engine/render_cv.sh` | Renders any CV markdown (built, a master, or hand-written) to a single-column, ATS-safe PDF — no build step required |
-| `engine/render_cv_photo.sh` | Same, but two-column with a circular photo — the full-CV companion to `render_cv_minimal.sh`'s photo styles |
-| `engine/render_letter.sh` | Renders `cover_letter.md` to a clean, prose-only PDF |
+| `engine/verify_cvs.py` | Confirms a rendered PDF is exactly one page (or whatever `limits.max_pages`/`--max-pages` says; `--max-pages 0` disables the gate) — the default target glob is `cv-minimal.pdf` only |
+| `engine/render_cv_minimal.sh` | Renders `cv-minimal.md` to a one-page PDF; `--photo` is required (or set `render.default_photo`); `--style a\|b\|c\|z` picks the CSS style, see `docs/CUSTOMIZING.md` |
+| `engine/render_cv.sh` | Renders any CV markdown (built, a master, or hand-written) to a single-column, ATS-safe PDF — no build step, no photo |
+| `engine/render_cv_photo.sh` | Same id-agnostic rendering, but two-column with a required circular photo — the full-CV companion to `render_cv_minimal.sh` |
+| `engine/render_letter.sh` | Renders `cover_letter.md` to a clean, prose-only PDF — no `--photo`/`--style`, a letter has neither |
 | `engine/md_to_email_txt.py` | Flattens a hand-wrapped cover letter into paste-ready plain email text |
-| `engine/collect_cvs.py` | Stages rendered CVs into `produced/to_send/` for review |
+| `engine/collect_cvs.py` | Stages rendered `cv-minimal.pdf`s into `produced/to_send/` for review (the full CV's `cv.pdf`/`cv-photo.pdf` have no collect step — review those from `generate-pdfs/` directly) |
 | `engine/collect_letters.py` | Same, for one cover letter at a time — no bulk mode, by design |
-| `engine/lib.sh` | Shared cross-platform browser discovery, sourced by the renderers |
+| `engine/lib.sh` | Shared cross-platform browser discovery (`find_browser`), the headless print flags, and `config_get()` — sourced by every renderer |
+| `engine/config.py` | Root resolution (`--root` / `$JOBHUNTKIT_ROOT` / walk-up) and `config.json` loading — imported by every Python script above |
+| `engine/cv_common.py` | Shared helpers for the "is this sent/declined" folder-move convention, used by `scan_applications.py` and both `collect_*.py` scripts |
+| `community/community.sh` | Read-only `gh`/`git` wrapper for `community/`'s open-question → issue → resolved lifecycle — see `community/README.md` |
 
 ## Status
 
@@ -138,11 +150,12 @@ pre-commit hook. Now also in: the full loop — `scan_applications.py` (what nee
 `generic` today; `docs/EXTRACTORS.md` is the how-to for adding one), `collect_cvs.py`/
 `collect_letters.py` (staging finished PDFs for review), cover letters (`render_letter.sh`,
 `md_to_email_txt.py`), and `agents/cv-tailor.md` wiring all of it into one agent-driven pass. A
-pytest suite covers the golden build, the structure/coverage checkers, the leak gate, the
-scaffolding script, the scan/collect/extractor logic, and the email flattener (see Running tests
-below), and CI (`.github/workflows/ci.yml`) runs it on every push — lint, the pytest suite on
-ubuntu/macos/windows, and a render-matrix job proving `demo.sh` actually works end-to-end on
-ubuntu and macOS, not just the Windows machine it was built on. Now also in: the full-CV
+109-test pytest suite covers all of the above (see Running tests below), and CI
+(`.github/workflows/ci.yml`) runs it on every push across three jobs: `lint` (`ruff`, the leak
+gate for real — not just the local pre-commit hook — and `shellcheck -x` on every tracked `.sh`
+file), `test` (the pytest suite on ubuntu/macos/windows), and `render-matrix` (`node --check` on
+every JS converter, then the real `demo.sh` on ubuntu and macOS, not just the Windows machine
+this was built on). Now also in: the full-CV
 pipeline — two masters (`master_cv.md` primary, `master_cv_minimal.md` its condensation, shared
 `@id` namespace with an inheritance rule pinned by tests), a second `build_cv.py`/`check_cv.py`
 pipeline (`cv.md`, same per-company selections as `cv-minimal.md`, opt in via an
@@ -150,12 +163,14 @@ pipeline (`cv.md`, same per-company selections as `cv-minimal.md`, opt in via an
 (`render_cv.sh`/`render_cv_photo.sh`) that clean their own input (comment stripping, a
 `<!-- render:stop -->` tag) so a master file also renders directly with no build step at all.
 `verify_cvs.py --max-pages` lets a multi-page artifact be checked (or the gate disabled
-entirely) without touching the global one-page default. Not yet built: extractors for
-Greenhouse/Lever/Workday/Indeed (filed as `good first issue`s), a generated ChatGPT-paste
-variant of the agent instructions, and a roomier spine-only template. Open questions and
-proposed work are tracked in [`community/`](community/), not GitHub Milestones (there aren't
-any) — see `community/README.md` for the lifecycle and `community/community.sh` for reading it
-back from the terminal.
+entirely) without touching the global one-page default. Not yet built: posting-change detection
+(re-checking a saved posting after the fact). Extractors for Greenhouse/Lever/Workday/Indeed, a
+generated ChatGPT-paste variant of the agent instructions, and a roomier spine-only template were
+all considered and turned into open questions rather than decided work — see
+[`community/OPEN_QUESTIONS.md`](community/OPEN_QUESTIONS.md). Open questions and proposed work
+are tracked in [`community/`](community/), not GitHub Milestones (there aren't any) — see
+`community/README.md` for the lifecycle and `community/community.sh` for reading it back from
+the terminal.
 
 ## Running tests
 
@@ -164,16 +179,20 @@ pip install -r requirements-dev.txt
 python3 -m pytest tests/
 ```
 
-Pure-Python, no browser or Node.js needed — covers `build_cv.py` (golden-file diff against
-`examples/demo/expected/`), `check_cv.py` (broken-spine fixtures, coverage math), and
+Pure-Python, no browser or Node.js needed — 109 tests across `build_cv.py` (golden-file diff
+against `examples/demo/expected/`), `check_cv.py` (broken-spine fixtures, coverage math),
 `audit_public.py`/`sync.sh` (leak-gate fixtures, plus an end-to-end check that a root's private
-content never enters `sync.sh push`'s scanned or copied file list).
+content never enters `sync.sh push`'s scanned or copied file list), `init_workspace.py`,
+`scan_applications.py`, `collect_cvs.py`/`collect_letters.py`, `extract_posting.py` + the
+extractor registry, `md_to_email_txt.py`, `verify_cvs.py`, `community/community.sh`'s read-only
+guarantee, and content checks against the agent instruction files themselves (`agents/*.md`).
 
 ## Config
 
 Everything person-specific lives in `config.json` (JSON, not YAML — no extra dependency to
-parse it). Copy `config.example.json` to get started — it lists every key with its default.
-At minimum you'll want `person.name`, `person.file_prefix`, and optionally `render.default_photo`.
+parse it). Copy `config.example.json` to get started — it has every key `DEFAULT_CONFIG` does,
+though `person.name`/`person.file_prefix` are placeholders to replace rather than real defaults
+(see `docs/CONFIG.md`). At minimum you'll want those two, plus optionally `render.default_photo`.
 
 ## Requirements
 
