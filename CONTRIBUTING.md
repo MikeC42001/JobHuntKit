@@ -1,8 +1,9 @@
 # Contributing
 
 Thanks for considering it. JobHuntKit is a small, opinionated toolkit — most contributions worth
-making are either extending the engine (a new posting extractor, a renderer fix) or improving
-the docs a stranger's first run depends on.
+making fall into a few buckets: extending the engine (a new posting extractor, a renderer fix),
+improving the docs a stranger's first run depends on, or adding a new CV visual style for the
+rendered PDF.
 
 ## The one rule that matters: never commit real CV data
 
@@ -59,8 +60,7 @@ boundary in mind for any change — a new script should take `--root` via
 Got an idea rather than a finished PR? Just open an issue — that's the normal path, and every
 open issue is a `question`-labelled one until it's been scoped into approved work (see
 [`community/README.md`](community/README.md) for the full lifecycle: question → reactions/
-comments while it's genuinely undecided → promoted to scoped work). `bash community/community.sh
-status` reads the current state of all three stages back from GitHub at any time.
+comments while it's genuinely undecided → promoted to scoped work). `bash community/community.sh status` reads the current state of all three stages back from GitHub at any time.
 `community/OPEN_QUESTIONS.md` is the maintainer's own pre-issue queue for ideas not yet ready to
 post — it's not where you file something as a contributor, just background if you're curious what's
 being weighed.

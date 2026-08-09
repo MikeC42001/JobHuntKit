@@ -122,6 +122,24 @@ Running the whole pipeline by hand, no agent involved: [docs/NO-AI.md](docs/NO-A
 | the default CV style | `config.json` → `render.default_style` |
 | add a new PDF style | → [docs/CUSTOMIZING.md](docs/CUSTOMIZING.md) |
 
+## Or let an agent set it up
+
+Every workflow here has agent instructions in [`AGENTS.md`](AGENTS.md), usable from Claude Code,
+Cursor, Codex, or anything else that reads that filename convention. To go from nothing to a
+working setup, paste this at an agent that can run shell commands:
+
+> Clone https://github.com/MikeC42001/JobHuntKit and set it up for me.
+>
+> Read `AGENTS.md` first, then follow `agents/cv-setup.md` to build my content layer.
+>
+> Ask me for my real background before writing anything into my CV. Don't invent employers,
+> dates, or achievements. Leave a placeholder and ask me instead.
+
+It will ask where your CV data should live, inside the clone or in its own directory, before
+scaffolding anything.
+
+Claude Code users can skip the prompt entirely: clone, then run `/cv-setup`.
+
 ## Scripts
 
 | Script | Does |
@@ -151,41 +169,18 @@ Running the whole pipeline by hand, no agent involved: [docs/NO-AI.md](docs/NO-A
 
 ## Status
 
-Working: build, validate (structure + coverage), render, verify, and now onboarding — blank
-starter templates, `scripts/init_workspace.py`, the published format contract
-(`docs/SPEC.md`/`docs/CONFIG.md`/`docs/GETTING-STARTED.md`/`docs/NO-AI.md`), and portable agent
-instructions (`agents/CONTEXT.md` + `agents/cv-setup.md`, wired up as a Claude Code skill/command
-and a Cursor rule) — all cross-platform. `check_cv.py`'s locked spine, education requirements,
-and verbatim-line checks are entirely `config.json`-driven; a fresh root with nothing configured
-prints a clear "not configured" message rather than a false "all OK". A leak gate
-(`scripts/audit_public.py`) and a manifest-bounded sync mechanism (`engine.manifest` +
-`scripts/sync.sh`) are also in — `bash scripts/install_hooks.sh` wires the same check into a
-pre-commit hook. Now also in: the full loop — `scan_applications.py` (what needs attention),
-`extract_posting.py` + a pluggable `engine/extractors/` registry (`linkedin`, `plaintext`,
-`generic` today; `docs/EXTRACTORS.md` is the how-to for adding one), `collect_cvs.py`/
-`collect_letters.py` (staging finished PDFs for review), cover letters (`render_letter.sh`,
-`md_to_email_txt.py`), and `agents/cv-tailor.md` wiring all of it into one agent-driven pass. A
-109-test pytest suite covers all of the above (see Running tests below), and CI
-(`.github/workflows/ci.yml`) runs it on every push across three jobs: `lint` (`ruff`, the leak
-gate for real — not just the local pre-commit hook — and `shellcheck -x` on every tracked `.sh`
-file), `test` (the pytest suite on ubuntu/macos/windows), and `render-matrix` (`node --check` on
-every JS converter, then the real `demo.sh` on ubuntu and macOS, not just the Windows machine
-this was built on). Now also in: the full-CV
-pipeline — two masters (`master_cv.md` primary, `master_cv_minimal.md` its condensation, shared
-`@id` namespace with an inheritance rule pinned by tests), a second `build_cv.py`/`check_cv.py`
-pipeline (`cv.md`, same per-company selections as `cv-minimal.md`, opt in via an
-`application.md`'s `pipelines:` front-matter key), and id-agnostic renderers
-(`render_cv.sh`/`render_cv_photo.sh`) that clean their own input (comment stripping, a
-`<!-- render:stop -->` tag) so a master file also renders directly with no build step at all.
-`verify_cvs.py --max-pages` lets a multi-page artifact be checked (or the gate disabled
-entirely) without touching the global one-page default. Not yet built: posting-change detection
-(re-checking a saved posting after the fact). Extractors for Greenhouse/Lever/Workday/Indeed, a
-generated ChatGPT-paste variant of the agent instructions, and a roomier spine-only template were
-all considered and turned into open questions rather than decided work — see
-[`community/OPEN_QUESTIONS.md`](community/OPEN_QUESTIONS.md). Open questions and proposed work
-are tracked in [`community/`](community/), not GitHub Milestones (there aren't any) — see
-`community/README.md` for the lifecycle and `community/community.sh` for reading it back from
-the terminal.
+**v0.1.0.** The full loop works end to end: build, validate, render, verify, stage. CI runs it on
+Linux, macOS, and Windows. [CHANGELOG.md](CHANGELOG.md) has the detail.
+
+Not built yet, deliberately:
+
+- **Posting-change detection**, i.e. noticing when a job posting changes after you saved it.
+- **More extractors.** `linkedin`, `plaintext`, and `generic` ship today; Greenhouse, Lever,
+  Workday, and Indeed don't.
+
+Both are open questions rather than a roadmap. They're weighed in
+[`community/OPEN_QUESTIONS.md`](community/OPEN_QUESTIONS.md) before becoming issues, so that's
+the place to say you want one.
 
 ## Running tests
 

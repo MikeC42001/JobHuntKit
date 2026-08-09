@@ -10,8 +10,17 @@ never copies.
 Find a directory containing `config.json` and a sibling `engine/build_cv.py`, checking the
 current working directory then its parents. If nothing is found:
 
-- No `config.json` anywhere above cwd → this is a fresh clone with no data root yet. Run
-  `python scripts/init_workspace.py` first (from the repo root), then re-probe.
+- No `config.json` anywhere above cwd → this is a fresh clone with no data root yet. **Ask where
+  the data should live before scaffolding**, and explain the choice:
+  - *Inside the clone* — `python scripts/init_workspace.py`. Nothing to configure, and the
+    content paths are gitignored, so CV data can't reach this repo's history by accident. Best
+    for trying it out.
+  - *Its own directory* — `python scripts/init_workspace.py --root <path>`. The CV data can then
+    live in a private repo of its own, and `git pull` on this checkout never touches it. Best if
+    this is going to get real use.
+
+  Then re-probe. If they chose a separate root, every later command this session needs the same
+  `--root <path>`, or `$JOBHUNTKIT_ROOT` set once.
 - Still ambiguous (e.g. you're not inside a JobHuntKit checkout at all) → ask: "Where's the
   JobHuntKit root for this session?" Don't guess a path.
 

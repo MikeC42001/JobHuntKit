@@ -9,6 +9,12 @@ import re
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 AGENTS_DIR = os.path.join(REPO_ROOT, "agents")
+README_PATH = os.path.join(REPO_ROOT, "README.md")
+
+# README.md carries a copy-paste bootstrap prompt under this heading, as a blockquote. Every
+# backticked path inside it is a file someone's agent will be told to open on a fresh clone.
+BOOTSTRAP_HEADING = "## Or let an agent set it up"
+BACKTICKED_PATH_RE = re.compile(r"`([A-Za-z0-9_./-]+\.(?:md|py|sh|json))`")
 
 # Only actual invocations (the "! bash ..." lines Claude Code runs), not prose mentions of the
 # script's name in a sentence.
@@ -54,3 +60,47 @@ def test_context_md_write_allowlist_covers_both_masters():
     assert "master/master_cv_minimal.md" in may_write
     assert "cv.md" in never_write, "cv.md is as generated as cv-minimal.md and must stay listed"
     assert "cv-minimal.md" in never_write
+
+
+def _bootstrap_prompt_block():
+    """The blockquote body under BOOTSTRAP_HEADING. Asserts its way there rather than returning
+    an empty string, so a renamed heading fails loudly instead of passing vacuously."""
+    with open(README_PATH, "r", encoding="utf-8") as f:
+        text = f.read()
+
+    assert BOOTSTRAP_HEADING in text, (
+        f"README.md lost the {BOOTSTRAP_HEADING!r} section — it's the only documented path from "
+        "'I have an agent open' to a working clone, so don't drop it silently."
+    )
+    section = text.split(BOOTSTRAP_HEADING, 1)[1].split("\n## ", 1)[0]
+    quoted = [ln.lstrip("> ").rstrip() for ln in section.splitlines() if ln.startswith(">")]
+    return "\n".join(quoted)
+
+
+def test_bootstrap_prompt_references_only_real_files():
+    """README's copy-paste prompt names the files an agent should read on a fresh clone. Rename
+    or move one and every new user's agent gets sent at a path that doesn't exist — the same
+    failure mode as cv-tailor.md's missing --photo, and nothing else in the suite would catch it."""
+    prompt = _bootstrap_prompt_block()
+    assert prompt.strip(), "the bootstrap prompt blockquote is empty"
+
+    paths = BACKTICKED_PATH_RE.findall(prompt)
+    assert paths, "no backticked file paths found in the bootstrap prompt — did its format change?"
+
+    missing = [p for p in paths if not os.path.exists(os.path.join(REPO_ROOT, p))]
+    assert missing == [], f"bootstrap prompt references nonexistent path(s): {missing}"
+
+
+def test_readme_agent_section_promises_a_real_claude_command():
+    """That section tells Claude Code users they can skip the prompt and run /cv-setup, which is
+    only true if the command file is actually shipped in the repo."""
+    with open(README_PATH, "r", encoding="utf-8") as f:
+        text = f.read()
+    section = text.split(BOOTSTRAP_HEADING, 1)[1].split("\n## ", 1)[0]
+
+    if "/cv-setup" in section:
+        command_file = os.path.join(REPO_ROOT, ".claude", "commands", "cv-setup.md")
+        assert os.path.exists(command_file), (
+            "README promises `/cv-setup` works after cloning, but "
+            ".claude/commands/cv-setup.md isn't in the repo"
+        )
