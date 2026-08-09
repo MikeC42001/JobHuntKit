@@ -44,3 +44,7 @@ Or delete this folder entirely if you'd rather start from scratch with `python
 engine/build_cv.py --all --check` reporting nothing to do.
 
 This `## Notes` section is read by nobody but you — it never reaches the generated CV.
+
+This file has no `pipelines:` front-matter key, which means it builds the tailored one-pager
+only (`cv-minimal.md`). Add `pipelines: minimal, full` above to also build the long-form
+`cv.md` from `master/master_cv.md` — see `docs/CONFIG.md`'s "pipelines" section.

@@ -1,9 +1,10 @@
 # Background — Your Name
 
-Source of truth for `master/master_cv_minimal.md`. This file itself is never parsed by any
-script — it's the raw material you (or an agent, in `cv-setup`'s Bootstrap mode) read to decide
-what goes into the master's `@id` blocks. Nothing here is copied verbatim; the master is a
-hand-distilled summary of this.
+Source of truth for `master/master_cv.md` — the primary master, full wording — which is then
+condensed into `master/master_cv_minimal.md` (same `@id`s, terser). This file itself is never
+parsed by any script — it's the raw material you (or an agent, in `cv-setup`'s Bootstrap mode)
+read to decide what goes into the master's `@id` blocks. Nothing here is copied verbatim; the
+master is a hand-distilled summary of this.
 
 When you add a new fact later, use a dated annotation so you can tell what came from when:
 `**Label (added YYYY-MM-DD):** the fact itself.`

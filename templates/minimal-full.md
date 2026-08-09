@@ -3,6 +3,10 @@
   "full" shape: everything that fits on one page, tight spacing. See docs/SPEC.md for the full
   placeholder grammar and the renderer-compatibility contract (LF endings, entry-header format).
 
+  The same application.md can also drive templates/full.md (the long-form, no-page-budget
+  sibling template) via an opt-in "pipelines: minimal, full" front-matter key — see
+  templates/full.md's own header and docs/CONFIG.md's "pipelines" section.
+
   Placeholder syntax build_cv.py understands, `{{ }}` markers:
     {{@id}}           — locked content, copied verbatim from master_cv_minimal.md by that ID.
                          Errors if the ID is missing from the master (a locked slot must resolve).

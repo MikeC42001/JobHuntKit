@@ -12,10 +12,14 @@ never-auto-commit rule shared by every task-specific instruction file. Then:
 - [`agents/cv-tailor.md`](agents/cv-tailor.md) — scan for new/stale applications, draft
   `application.md`, build, validate, render, and stage a tailored CV (and optionally a cover
   letter) for one posting.
+- [`agents/interview-prep.md`](agents/interview-prep.md) — a live mock-Q&A pass against a
+  company's `application.md`, checking for contradictions, factual drift, and vague self-praise.
+  Doesn't touch `engine/` at all.
 
-Claude Code users: the same instructions are also available as the `cv-setup`/`cv-tailor`
-skills/commands — see `.claude/skills/cv-setup/SKILL.md` and `.claude/skills/cv-tailor/SKILL.md`.
-All of these are thin pointers to the `agents/` files above, not separate copies.
+Claude Code users: the same instructions are also available as the `cv-setup`/`cv-tailor`/
+`interview-prep` skills/commands — see `.claude/skills/cv-setup/SKILL.md`,
+`.claude/skills/cv-tailor/SKILL.md`, and `.claude/skills/interview-prep/SKILL.md`. All of these
+are thin pointers to the `agents/` files above, not separate copies.
 
 For the format contract (not agent-specific — anyone can read this), see
 [`docs/SPEC.md`](docs/SPEC.md); for `config.json`, see [`docs/CONFIG.md`](docs/CONFIG.md).
