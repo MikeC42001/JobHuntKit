@@ -1,5 +1,9 @@
 # JobHuntKit
 
+[![CI](https://github.com/MikeC42001/JobHuntKit/actions/workflows/ci.yml/badge.svg)](https://github.com/MikeC42001/JobHuntKit/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+
 A small, opinionated toolkit that turns one master CV and a per-posting selection file into a
 validated, one-page, tailored PDF — markdown in, PDF out, no hand-copying, no drift between
 applications.
