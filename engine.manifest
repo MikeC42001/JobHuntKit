@@ -38,3 +38,5 @@ requirements-dev.txt
 engine.manifest
 .private-terms.example
 .gitignore
+pyproject.toml
+CHANGELOG.md

@@ -23,12 +23,13 @@ different machine, which is the whole point of it living in this public repo.
 ## File ownership
 
 You may write: `applications/offer-pages/<Company>/application.md`, `posting.md`, `notes.md`,
-`cover_letter.md`, `interview_prep_*.md`, `profile/background.md`, `master/master_cv_minimal.md`,
-`master/CV_SPEC.md`, `applications/README.md`, `config.json` (only its non-spine keys unless a
-task explicitly asks you to change the spine).
+`cover_letter.md`, `interview_prep_*.md`, `profile/background.md`, `master/master_cv.md`,
+`master/master_cv_minimal.md`, `master/CV_SPEC.md`, `applications/README.md`, `config.json`
+(only its non-spine keys unless a task explicitly asks you to change the spine).
 
-You must **never** write: `cv-minimal.md` (generated — see `docs/SPEC.md`, "build artifacts"),
-anything under `generate-pdfs/` or `produced/` (rendered output, also generated).
+You must **never** write: `cv-minimal.md` or `cv.md` (both generated — see `docs/SPEC.md`,
+"build artifacts"), anything under `generate-pdfs/` or `produced/` (rendered output, also
+generated).
 
 **Never auto-commit.** Report what changed and let the person decide when to commit — same rule
 as every other agent-driven flow in this toolkit.

@@ -43,7 +43,7 @@ disk, verify, and re-stage.
 
 For each path printed, re-render:
 
-    ! bash engine/render_cv_minimal.sh "<path>/cv-minimal.md"
+    ! bash engine/render_cv_minimal.sh "<path>/cv-minimal.md" --photo images/<photo>.png
     ! python engine/verify_cvs.py
 
 Then re-stage everyone, forced (so an unchanged-since-last-collect PDF still gets re-copied with
@@ -53,7 +53,7 @@ its refreshed render):
 
 **`render <Company>` (one company):**
 
-    ! bash engine/render_cv_minimal.sh "applications/offer-pages/<Company>/cv-minimal.md"
+    ! bash engine/render_cv_minimal.sh "applications/offer-pages/<Company>/cv-minimal.md" --photo images/<photo>.png
     ! python engine/verify_cvs.py "applications/offer-pages/<Company>/generate-pdfs/cv-minimal.pdf"
     ! python engine/collect_cvs.py --force "<Company>"
 
@@ -153,7 +153,7 @@ and either include or explicitly omit it — don't leave the run with an undecla
 
 For every target company:
 
-    ! bash engine/render_cv_minimal.sh "applications/offer-pages/<Company>/cv-minimal.md"
+    ! bash engine/render_cv_minimal.sh "applications/offer-pages/<Company>/cv-minimal.md" --photo images/<photo>.png
 
 Then verify page count for just this run's targets:
 

@@ -103,7 +103,7 @@ still there to turn on later.
 
 ## Why not GitHub Milestones?
 
-Also considered and rejected. `git tag --contains` already answers "which release shipped this"
+Also considered and rejected for now. `git tag --contains` already answers "which release shipped this"
 as a fact derived from git, with no upkeep. A milestone records *intent* ahead of time and then
 needs someone to keep it current — one more thing to go stale. `README.md`'s roadmap paragraph
 points here instead.
