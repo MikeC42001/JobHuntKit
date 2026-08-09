@@ -37,7 +37,7 @@ master. `engine/build_cv.py` assembles the three into `cv-minimal.md`; `engine/c
 validates the locked spine landed correctly and reports coverage; `engine/render_cv_minimal.sh`
 renders it to PDF; `engine/verify_cvs.py` gates page count.
 
-## Current state (M0-M3 merged to `dev`; deferred-M3 full-CV pipeline complete, 2026-08-08)
+## Current state (M0-M3 merged to `dev`; M4 release prep in progress, 2026-08-09)
 
 Working end-to-end: clone → `bash demo.sh` → build → validate → render → verify → one-page PDF,
 now genuinely cross-platform-verified — the `render-matrix` CI job (PR #1, 2026-08-05) runs
@@ -235,20 +235,60 @@ from 7 to 10 steps — the existing build already produced `cv.md` once the demo
 the direct-master-render steps switched to `master_cv.md` (the primary) to match the docs.
 102/102 tests pass (12 new), lint clean, leak gate clean.
 
-**Not yet built (M4, next up)** — full breakdown in this machine's `~/.claude/plans/` history,
-the original M0–M4 design doc:
-- `scripts/build_paste_prompts.py` — a generated ChatGPT-paste variant of the agent instructions
-- `templates/minimal-lean.md` (roomier spine-only variant)
-- `CHANGELOG.md`, the `v0.1.0` tag, GitHub topics/description/social preview, README badges
-- Posting-change detection (re-fetching/diffing a live posting after it's saved) — a genuine gap
-  in both the public and private pipelines, not scoped to any milestone yet
-- Optionally, the first `sync.sh pull` into the private `job-hunt/` folder, to prove the
-  mechanism round-trips
+**M4 scope narrowed, 2026-08-09.** The original M0–M4 design doc
+(`~/.claude/plans/immutable-marinating-volcano.md`) scoped M4 as "Polish" — `CHANGELOG.md`, the
+`v0.1.0` tag, GitHub metadata, README badges. `scripts/build_paste_prompts.py` and
+`templates/minimal-lean.md` had drifted onto M4's list even though they were M3-scoped, deferred
+items — they're out again, and (same reasoning as the extractor issues below) turned into
+`community/OPEN_QUESTIONS.md`'s **Q-004** and **Q-005** rather than left as an implied roadmap:
+neither exists in the private pipeline, so unlike everything in M3 they're new design work
+nobody's validated is wanted. Posting-change detection stays **Q-002**, unscoped. The optional
+first `sync.sh pull` into the private `job-hunt/` folder is skipped for this pass — that folder
+stays untouched.
 
 Extractors for Greenhouse, Lever, Workday, Indeed (see `docs/EXTRACTORS.md`) were briefly filed
-as `good first issue`s (#3–#6, 2026-08-08) then deleted the same day — filing assumed the answer
-before asking. Whether any of these are worth building is now `community/OPEN_QUESTIONS.md`'s
-Q-003, an open question rather than decided work, **not blocking M4**.
+as `good first issue`s (#3–#6, 2026-08-08) then **deleted** the same day (not just closed) — an
+early example of the same "filing assumed the answer before asking" mistake. Whether any of
+these are worth building is now `community/OPEN_QUESTIONS.md`'s **Q-003**, **not blocking M4**.
+
+**M4 work done, `feat/m4-release-prep`, 2026-08-09** (branch renamed from
+`chore/unfile-extractor-issues`, which already held the extractor un-filing — cascade rule, one
+branch per milestone). Planned with a research pass that read every doc against the actual code
+and found real bugs, not just drift — reshaped the milestone from "add release artifacts" into
+"fix what's wrong, then add release artifacts":
+
+- **Tier 1 — correctness bugs, fixed outright.** `agents/cv-tailor.md`'s three
+  `render_cv_minimal.sh` calls all omitted `--photo`, which the script hard-exits 1 without (no
+  default is configured out of the box) — the flagship tailoring workflow failed for every new
+  user, every time. `agents/CONTEXT.md`'s file-ownership lists omitted `master/master_cv.md`
+  from may-write (the file `cv-setup.md` is instructed to write first) and `cv.md` from
+  never-write (as generated as `cv-minimal.md`). `build_cv.py`'s duplicate-`@id` error always
+  named `master_cv_minimal.md` regardless of which master actually had the duplicate.
+  `engine.manifest` was missing `pyproject.toml` (configures `ruff`, CI-enforced, never
+  propagated by `sync.sh`). Two new regression tests (`tests/test_build_cv.py`,
+  `tests/test_agents_docs.py`) pin the fixes — 109/109 tests pass throughout.
+- **Tier 2 — documentation accuracy sweep**, file by file: `docs/SPEC.md` (a genuinely false
+  claim that `spine.heading_aliases` extends what the renderer recognizes — it doesn't, the
+  renderer never reads `config.json`; another false claim that `cv2html-photo.js` has no section
+  model, when it does; the real `{{@id?}}` blank-collapse behavior; token precedence;
+  `## Dissertation depth`, the fifth `FIELD_HEADINGS` entry missing from the canonical listing),
+  `docs/CONFIG.md`, `docs/NO-AI.md`, `README.md` (Scripts table was missing 8 real scripts),
+  `docs/GETTING-STARTED.md` + `scripts/init_workspace.py` (the script's printed onboarding
+  sequence still taught the pre-second-master flow — fixed and verified by actually running it),
+  `CONTRIBUTING.md`, `AGENTS.md`, and `templates/*.md` headers (the two-master relationship was
+  documented in one direction only).
+- **Tier 3 — orientation layer.** New `docs/CUSTOMIZING.md`: which file to edit for content vs.
+  structure vs. the PDF's visual look, plus a verified 5-touchpoint recipe for adding a new
+  `render_cv_minimal.sh --style` (exercised for real against the demo, not just described).
+  Registered in all five files that index the docs set. README gained a short pointer table.
+- **Tier 4 — release artifacts.** `CHANGELOG.md` (Keep a Changelog, one `[0.1.0]` section,
+  grouped by capability), CI/license/Python badges on README (expected to 404 until the public
+  flip — the URLs are correct, there's just nothing to point at yet).
+
+**Still open, this milestone:** GitHub topics/description/social preview (`gh repo edit` —
+outward-facing, needs explicit approval before running; social preview itself has no `gh`
+support, manual web-UI upload). Then, once approved separately: merge to `main`, tag `v0.1.0`,
+flip the repo public.
 
 **CI coverage gaps closed, 2026-08-08, on `feat/ci-coverage-gaps`** (PR #9, merge commit
 `82bedb7`, all 6 CI jobs green). Auditing what `ci.yml` actually exercised found the leak gate
@@ -283,7 +323,8 @@ Deliberately **not** dogfooded yet, and diverging by design rather than forking/
 one — see `[[project_jobhuntkit]]` for the reasoning. The leak-prevention mechanism
 (`engine.manifest`-bounded `sync.sh` + `audit_public.py`) is now **built and verified** (see
 Current state above), which is what makes eventually syncing the private folder to this engine
-safe — actually doing that migration is still M4, deliberately last.
+safe — the first real `sync.sh pull` was optional for this M4 pass and deliberately skipped
+(2026-08-09), still last on the list whenever it does happen.
 
 ## End of Day Checklist
 
@@ -295,8 +336,10 @@ safe — actually doing that migration is still M4, deliberately last.
 
 ---
 
-> Last updated: 2026-08-08 (deferred-M3 full-CV pipeline complete — PR #2 render_cv.sh/
-> render_cv_photo.sh id-agnostic rendering, PR #7 master_cv.md + dual build_cv.py pipeline,
-> PR #8 community/ issue-orchestration folder + GitHub-issue approval rule, PR #9 CI coverage
-> gaps closed (audit_public.py + shellcheck + node --check + community.sh tests) — all merged to
-> dev; extractor issues filed, all branches cleaned up)
+> Last updated: 2026-08-09 (M4 scope narrowed to release essentials — build_paste_prompts.py and
+> minimal-lean.md moved to Q-004/Q-005, extractor good-first-issues deleted and tracked as Q-003;
+> Tier 1 real-bug fixes (cv-tailor.md --photo, CONTEXT.md ownership lists, build_cv.py duplicate-
+> id message, engine.manifest); a full documentation-accuracy sweep across SPEC/CONFIG/NO-AI/
+> README/GETTING-STARTED/CONTRIBUTING/AGENTS/templates headers, including fixing
+> init_workspace.py's stale onboarding sequence; new docs/CUSTOMIZING.md + README pointer table;
+> CHANGELOG.md + badges — all on `feat/m4-release-prep`, not yet merged to `dev`)
