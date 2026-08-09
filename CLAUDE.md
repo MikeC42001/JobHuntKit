@@ -39,7 +39,7 @@ master. `engine/build_cv.py` assembles the three into `cv-minimal.md`; `engine/c
 validates the locked spine landed correctly and reports coverage; `engine/render_cv_minimal.sh`
 renders it to PDF; `engine/verify_cvs.py` gates page count.
 
-## Current state (M0-M3 merged to `dev`; M4 release prep in progress, 2026-08-09)
+## Current state (M0–M4 all merged to `dev`, 2026-08-09; `main` untouched, no tag yet)
 
 Working end-to-end: clone → `bash demo.sh` → build → validate → render → verify → one-page PDF,
 now genuinely cross-platform-verified — the `render-matrix` CI job (PR #1, 2026-08-05) runs
@@ -320,10 +320,28 @@ Also rewrote `CONTRIBUTING.md`'s intro paragraph (missing comma, and it called a
 something different from the name used later in the same file). 111/111 tests pass (109 + 2),
 ruff clean, leak gate clean at 119 files.
 
-**Still open, this milestone:** GitHub topics/description/social preview (`gh repo edit` —
-outward-facing, needs explicit approval before running; social preview itself has no `gh`
-support, manual web-UI upload). Then, once approved separately: merge to `main`, tag `v0.1.0`,
-flip the repo public.
+**M4 closed out, 2026-08-09.** PR #10 merged to `dev` (merge commit `599d061`, all 6 CI jobs
+green, merge commit not squash per convention); `feat/m4-release-prep` deleted locally and on
+the remote, so `origin` is back to just `dev` + `main`. Repo description and 12 topics set via
+`gh repo edit` (approved in-conversation first, per the standing rule — the description names
+CV, cover letter, and interview prep, and closes on "Agent-driven or entirely by hand," the
+one property that separates this from every other markdown-résumé repo).
+
+**Social-preview card added** (`31def89`). `.github/make_social_card.py` generates the
+1280×640 OpenGraph image in dark and light variants, set in the repo's own bundled IBM Plex,
+with the demo CV angled and bleeding off the edge as *texture* rather than content — a full CV
+scaled into a feed thumbnail renders body text at ~3px, destroying the one thing the card
+exists to prove. It lives in `.github/` rather than `scripts/` deliberately: `scripts/` is
+user-facing tooling, and a generator for *this* repo's own metadata image is maintainer-only.
+Browser discovery reuses `engine/lib.sh`'s `find_browser` instead of duplicating it (with an
+MSYS→Windows path fix, since `lib.sh` answers in `/c/...` form that Windows Python can't exec).
+Both PNGs needed `BINARY_ALLOWLIST_EXACT` entries — the leak gate blocks every binary by
+default, and it only checks *tracked* files, so the allowlist has to be verified after staging
+(122 files, clean) rather than before. `ruff check` extended to cover `.github` in CI and all
+three docs quoting the command, so no Python here goes unlinted.
+
+**Still open:** the social-preview upload itself (Settings → General → Social preview; no `gh`
+support, manual only). Then: merge `dev` → `main`, tag `v0.1.0`, flip the repo public.
 
 **CI coverage gaps closed, 2026-08-08, on `feat/ci-coverage-gaps`** (PR #9, merge commit
 `82bedb7`, all 6 CI jobs green). Auditing what `ci.yml` actually exercised found the leak gate
@@ -371,8 +389,10 @@ safe — the first real `sync.sh pull` was optional for this M4 pass and deliber
 
 ---
 
-> Last updated: 2026-08-09, second session (release-prep review pass on the same
-> `feat/m4-release-prep` branch: public identity standardized to `MikeC42001` in all tracked
+> Last updated: 2026-08-09, second session. **M4 is done and merged** — PR #10 → `dev`
+> (`599d061`), repo description + 12 topics set, social-preview card generator and assets added
+> (`31def89`). Only the manual social-preview upload, then `main` + `v0.1.0` + the public flip,
+> remain. Earlier in that session (release-prep review pass on the `feat/m4-release-prep` branch: public identity standardized to `MikeC42001` in all tracked
 > content incl. LICENSE; `agents/CONTEXT.md` Step 0 now asks where the data root should live
 > instead of silently scaffolding into the checkout; README Status cut 37→11 lines and a new
 > "Or let an agent set it up" section added to replace the agent-layer discoverability it removed,
