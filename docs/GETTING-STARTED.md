@@ -19,10 +19,10 @@ Two honest tradeoffs, pick the one that fits:
 - **Root = this checkout** (no `--root`) is the fastest path — one command, nothing to remember
   afterward, every following command in this guide works with no `--root` flag. The cost:
   `master/`, `profile/`, `applications/`, `produced/`, `images/`, and `config.json` are all
-  already `.gitignore`d here (verified — see `docs/SPEC.md`'s "who owns what"), so `git status`
-  stays clean and none of it can accidentally get committed to this repo. If you `git pull`
-  engine updates later, your data sits right alongside the code being updated, which is fine as
-  long as you know that's the shape.
+  already `.gitignore`d here (see `.gitignore` at the repo root), so `git status` stays clean and
+  none of it can accidentally get committed to this repo. If you `git pull` engine updates later,
+  your data sits right alongside the code being updated, which is fine as long as you know
+  that's the shape.
 - **`--root` pointing outside the checkout** (your own private repo, a synced folder, anywhere)
   fully decouples data from code. This is the right choice if you intend to `git pull` engine
   updates regularly and want zero chance of the two tangling. Every command below still works —
@@ -45,8 +45,10 @@ In the order the script's own "Next" output suggests:
    blocks, full wording, no length pressure — this is the complete record. The file has a worked
    comment on every block explaining what it's for; the full marker syntax is in `docs/SPEC.md`.
 4. **`master/master_cv_minimal.md`** — condense the same blocks, same `@id`s, terser wording.
-   This is the file the tailored one-page pipeline pulls locked content from; the full master
-   from step 3 is what the full-CV pipeline and `render_cv.sh`/`render_cv_photo.sh` use.
+   This is the file the tailored one-page pipeline pulls locked content from. The full-CV
+   pipeline (built via `application.md`'s `pipelines:` key) reads the full master from step 3;
+   `render_cv.sh`/`render_cv_photo.sh` are id-agnostic and render whatever file you point them
+   at — either master, a built `cv.md`, or a hand-written file with no `@id` scheme at all.
 
 If you'd rather have an agent do steps 2–4 as a guided conversation instead of writing them by
 hand, see `agents/cv-setup.md` (Bootstrap mode) — it walks through the same decisions
@@ -96,6 +98,10 @@ gitignored at the default root). `verify_cvs.py` confirms the rendered PDF is ex
 (or whatever `config.json`'s `limits.max_pages` says); if it isn't, trim content (fewer
 projects, a shorter About me) rather than shrinking margins.
 
+Four visual variants exist for this renderer — `--style a|b|c|z` (default `a`), each a
+different CSS treatment of the same content. See `docs/CUSTOMIZING.md` for what each looks like
+and how to add another.
+
 ## 6. Optional: the full CV
 
 The tailored, one-page `cv-minimal.pdf` above is what you send per application. If you also want
@@ -104,16 +110,30 @@ you wrote in step 3, no build step needed:
 
 ```bash
 bash engine/render_cv.sh "master/master_cv.md"                              # single-column, ATS-safe
-bash engine/render_cv_photo.sh --photo images/me.png "master/master_cv.md"  # two-column, with photo
+bash engine/render_cv_photo.sh --photo images/me.png "master/master_cv.md"  # two-column, with photo -> cv-photo.pdf
 ```
 
 If you'd rather have it built and validated per company the same way `cv-minimal.md` is (using
 the same `application.md` selections), add `pipelines: minimal, full` to that company's front
-matter and re-run `engine/build_cv.py` — see `docs/CONFIG.md`'s `pipelines` section.
+matter and re-run `engine/build_cv.py` — this also writes `cv.md`, which needs its own checks
+before rendering, since the two commands in step 4 only validate `cv-minimal.md`:
+
+```bash
+python engine/check_cv.py --pipeline full "applications/offer-pages/<Company>"
+bash engine/render_cv.sh "applications/offer-pages/<Company>/cv.md"
+python engine/verify_cvs.py --max-pages 0 "applications/offer-pages/<Company>/generate-pdfs/cv.pdf"
+```
+
+`--max-pages 0` disables the one-page gate — the full CV has no page budget by design, so
+`verify_cvs.py` here just reports the count instead of failing it. See `docs/CONFIG.md`'s
+`pipelines` section for the config, and `docs/NO-AI.md`'s "The full CV" for the complete rundown.
 
 ## What's next
 
 - Full format reference, once you're past the basics: `docs/SPEC.md`.
 - Every `config.json` key explained: `docs/CONFIG.md`.
 - Running the whole pipeline by hand, no agent involved: `docs/NO-AI.md`.
+- Changing how the PDF looks, or adding a posting-source extractor: `docs/CUSTOMIZING.md` and
+  `docs/EXTRACTORS.md`.
+- Open questions and proposed work that aren't decided yet: `community/OPEN_QUESTIONS.md`.
 - Contributing back to the engine itself: `CONTRIBUTING.md`.

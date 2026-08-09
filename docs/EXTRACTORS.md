@@ -72,6 +72,7 @@ use of the private pipeline this package was ported from.
 
 `generic` (always matches, lowest confidence — the fallback of last resort), `plaintext` (`.txt`
 files and pasted text, no markup to strip), `linkedin` (job-details pages, refuses feed cards).
-Greenhouse, Lever, Workday, and Indeed are open — filed as `good first issue`s on this repo. Each
-has fairly stable, inspectable markup (a `data-automation-id` here, a `.posting-headline` there)
-that makes for a clean single-file contribution.
+Greenhouse, Lever, Workday, and Indeed are open — each has fairly stable, inspectable markup (a
+`data-automation-id` here, a `.posting-headline` there) that would make for a clean single-file
+contribution, but whether any of them are actually worth building is an open question
+(`community/OPEN_QUESTIONS.md`'s Q-003), not yet approved work.

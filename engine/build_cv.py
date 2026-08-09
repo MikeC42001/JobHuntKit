@@ -86,7 +86,7 @@ def parse_master(path):
                     content_lines.append(lines[i])
                 i += 1
             if block_id in blocks:
-                raise BuildError(f"master_cv_minimal.md: duplicate @{block_id} marker")
+                raise BuildError(f"{os.path.basename(path)}: duplicate @{block_id} marker")
             blocks[block_id] = "\n".join(content_lines).rstrip()
         else:
             i += 1

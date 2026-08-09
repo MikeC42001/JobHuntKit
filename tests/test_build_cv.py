@@ -8,6 +8,8 @@ golden-file approach for the full pipeline's cv.md/expected/cv.md.
 
 import os
 
+import pytest
+
 import build_cv
 import config as cfgmod
 
@@ -155,3 +157,21 @@ def test_every_minimal_id_exists_in_the_full_master_starter():
 
     missing = minimal_ids - full_ids
     assert missing == set(), f"id(s) in master_cv_minimal.md but not master_cv.md: {missing}"
+
+
+def test_duplicate_marker_error_names_the_actual_file(tmp_path):
+    """parse_master() runs on both master_cv.md and master_cv_minimal.md — the duplicate-@id
+    error must name whichever file was actually being parsed, not hardcode one of the two
+    filenames. Regression test for a real bug: the message used to always say
+    "master_cv_minimal.md" even when the duplicate was in master_cv.md."""
+    fixture = tmp_path / "master_cv.md"
+    fixture.write_text(
+        "<!-- @exp-role -->\nFirst.\n\n<!-- @exp-role -->\nSecond.\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(build_cv.BuildError) as excinfo:
+        build_cv.parse_master(str(fixture))
+
+    assert "master_cv.md" in str(excinfo.value)
+    assert "master_cv_minimal.md" not in str(excinfo.value)

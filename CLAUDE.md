@@ -4,9 +4,11 @@
 a tagged master CV + a per-posting selection file. Extracted and genericized from a private CV
 pipeline — that private source is never touched, moved, or migrated by this project.
 
-**Collaborators:** Solo (MC)
+**Collaborators:** Solo (MikeC42001)
 **GitHub:** `MikeC42001/JobHuntKit`, **private** (started private deliberately, 2026-08-04 — flip
 to public with `gh repo edit MikeC42001/JobHuntKit --visibility public` once it's ready to show)
+**Public identity:** in any tracked file, refer to the maintainer only as `MikeC42001` — never a
+first name, full name, or initials. `LICENSE`'s copyright line included.
 **Stack:** Python 3.8+ (stdlib only), Node.js (`marked` for markdown→HTML), Bash renderers →
 headless Chrome/Chromium/Edge/Brave `--print-to-pdf`. No build system, no pip dependencies for
 the engine itself.
@@ -18,7 +20,7 @@ the engine itself.
 
 ## Working conventions
 
-**Never open a GitHub issue without Miguel's explicit approval in the current conversation.**
+**Never open a GitHub issue without MikeC42001's explicit approval in the current conversation.**
 Draft the body, show it, wait for a yes — then (and only then) `gh issue create`. Same rule for
 `gh issue edit --add-label`/`--remove-label` and `gh issue close`: those are the two approval
 gates in `community/README.md`'s lifecycle, and an issue is public, permanent, and notifies
@@ -37,7 +39,7 @@ master. `engine/build_cv.py` assembles the three into `cv-minimal.md`; `engine/c
 validates the locked spine landed correctly and reports coverage; `engine/render_cv_minimal.sh`
 renders it to PDF; `engine/verify_cvs.py` gates page count.
 
-## Current state (M0-M3 merged to `dev`; deferred-M3 full-CV pipeline complete, 2026-08-08)
+## Current state (M0-M3 merged to `dev`; M4 release prep in progress, 2026-08-09)
 
 Working end-to-end: clone → `bash demo.sh` → build → validate → render → verify → one-page PDF,
 now genuinely cross-platform-verified — the `render-matrix` CI job (PR #1, 2026-08-05) runs
@@ -235,18 +237,93 @@ from 7 to 10 steps — the existing build already produced `cv.md` once the demo
 the direct-master-render steps switched to `master_cv.md` (the primary) to match the docs.
 102/102 tests pass (12 new), lint clean, leak gate clean.
 
-**Not yet built (M4, next up)** — full breakdown in this machine's `~/.claude/plans/` history,
-the original M0–M4 design doc:
-- `scripts/build_paste_prompts.py` — a generated ChatGPT-paste variant of the agent instructions
-- `templates/minimal-lean.md` (roomier spine-only variant)
-- `CHANGELOG.md`, the `v0.1.0` tag, GitHub topics/description/social preview, README badges
-- Posting-change detection (re-fetching/diffing a live posting after it's saved) — a genuine gap
-  in both the public and private pipelines, not scoped to any milestone yet
-- Optionally, the first `sync.sh pull` into the private `job-hunt/` folder, to prove the
-  mechanism round-trips
+**M4 scope narrowed, 2026-08-09.** The original M0–M4 design doc
+(`~/.claude/plans/immutable-marinating-volcano.md`) scoped M4 as "Polish" — `CHANGELOG.md`, the
+`v0.1.0` tag, GitHub metadata, README badges. `scripts/build_paste_prompts.py` and
+`templates/minimal-lean.md` had drifted onto M4's list even though they were M3-scoped, deferred
+items — they're out again, and (same reasoning as the extractor issues below) turned into
+`community/OPEN_QUESTIONS.md`'s **Q-004** and **Q-005** rather than left as an implied roadmap:
+neither exists in the private pipeline, so unlike everything in M3 they're new design work
+nobody's validated is wanted. Posting-change detection stays **Q-002**, unscoped. The optional
+first `sync.sh pull` into the private `job-hunt/` folder is skipped for this pass — that folder
+stays untouched.
 
-Extractors for Greenhouse, Lever, Workday, Indeed are filed as `good first issue`s (#3–#6,
-2026-08-08, see `docs/EXTRACTORS.md`) — **explicitly parked for after M4**, not blocking it.
+Extractors for Greenhouse, Lever, Workday, Indeed (see `docs/EXTRACTORS.md`) were briefly filed
+as `good first issue`s (#3–#6, 2026-08-08) then **deleted** the same day (not just closed) — an
+early example of the same "filing assumed the answer before asking" mistake. Whether any of
+these are worth building is now `community/OPEN_QUESTIONS.md`'s **Q-003**, **not blocking M4**.
+
+**M4 work done, `feat/m4-release-prep`, 2026-08-09** (branch renamed from
+`chore/unfile-extractor-issues`, which already held the extractor un-filing — cascade rule, one
+branch per milestone). Planned with a research pass that read every doc against the actual code
+and found real bugs, not just drift — reshaped the milestone from "add release artifacts" into
+"fix what's wrong, then add release artifacts":
+
+- **Tier 1 — correctness bugs, fixed outright.** `agents/cv-tailor.md`'s three
+  `render_cv_minimal.sh` calls all omitted `--photo`, which the script hard-exits 1 without (no
+  default is configured out of the box) — the flagship tailoring workflow failed for every new
+  user, every time. `agents/CONTEXT.md`'s file-ownership lists omitted `master/master_cv.md`
+  from may-write (the file `cv-setup.md` is instructed to write first) and `cv.md` from
+  never-write (as generated as `cv-minimal.md`). `build_cv.py`'s duplicate-`@id` error always
+  named `master_cv_minimal.md` regardless of which master actually had the duplicate.
+  `engine.manifest` was missing `pyproject.toml` (configures `ruff`, CI-enforced, never
+  propagated by `sync.sh`). Two new regression tests (`tests/test_build_cv.py`,
+  `tests/test_agents_docs.py`) pin the fixes — 109/109 tests pass throughout.
+- **Tier 2 — documentation accuracy sweep**, file by file: `docs/SPEC.md` (a genuinely false
+  claim that `spine.heading_aliases` extends what the renderer recognizes — it doesn't, the
+  renderer never reads `config.json`; another false claim that `cv2html-photo.js` has no section
+  model, when it does; the real `{{@id?}}` blank-collapse behavior; token precedence;
+  `## Dissertation depth`, the fifth `FIELD_HEADINGS` entry missing from the canonical listing),
+  `docs/CONFIG.md`, `docs/NO-AI.md`, `README.md` (Scripts table was missing 8 real scripts),
+  `docs/GETTING-STARTED.md` + `scripts/init_workspace.py` (the script's printed onboarding
+  sequence still taught the pre-second-master flow — fixed and verified by actually running it),
+  `CONTRIBUTING.md`, `AGENTS.md`, and `templates/*.md` headers (the two-master relationship was
+  documented in one direction only).
+- **Tier 3 — orientation layer.** New `docs/CUSTOMIZING.md`: which file to edit for content vs.
+  structure vs. the PDF's visual look, plus a verified 5-touchpoint recipe for adding a new
+  `render_cv_minimal.sh --style` (exercised for real against the demo, not just described).
+  Registered in all five files that index the docs set. README gained a short pointer table.
+- **Tier 4 — release artifacts.** `CHANGELOG.md` (Keep a Changelog, one `[0.1.0]` section,
+  grouped by capability), CI/license/Python badges on README (expected to 404 until the public
+  flip — the URLs are correct, there's just nothing to point at yet).
+
+**Release-prep review pass, same branch, 2026-08-09 (second session).** A read-through of the
+release-facing docs before merging PR #10, which turned up three things worth fixing:
+
+- **Public identity is now `MikeC42001` everywhere in tracked content**, never a real name or
+  initials — `LICENSE`'s copyright line included (a GitHub handle as copyright holder was
+  explicitly checked and is fine), along with two stale references in this file. A
+  case-insensitive `git grep` for the maintainer's real name and initials over tracked files now
+  returns nothing. `audit_public.py` never catches a bare personal name, so this is a manual gate
+  alongside the git-metadata one — and the check has to cover prose written *about* the change,
+  not just the change itself, since a write-up that quotes the strings it removed reintroduces
+  them.
+- **`agents/CONTEXT.md`'s Step 0 silently chose the data root for the user.** On a fresh clone it
+  said to run `init_workspace.py` with no `--root`, scaffolding CV data *inside the checkout*
+  without ever surfacing the alternative — even though `--root` is supported, documented in the
+  README, and the better choice for anyone who wants their CV data versioned in a repo of its
+  own. Step 0 now asks and explains both options, including the easy-to-miss consequence that a
+  separate root means every later command in the session needs the flag.
+- **`README.md`'s Status section was a 37-line changelog** written in accretion order ("Now also
+  in:" appeared twice), duplicating `CHANGELOG.md` and the Scripts table directly above it, with
+  a hardcoded test count guaranteed to go stale. Cut to 11 lines: version, what works, what's
+  deliberately not built, pointer to `community/OPEN_QUESTIONS.md`. That cut removed the README's
+  *only* mention that the agent layer exists, so a new **"Or let an agent set it up"** section
+  replaces it — a copy-paste bootstrap prompt (clone → read `AGENTS.md` → follow `cv-setup.md`,
+  and don't invent CV facts) plus the `/cv-setup` shortcut. It stays a pointer, not a copy: it
+  says the agent will ask about the root but doesn't restate the tradeoff, since `CONTEXT.md`
+  owns that. Two new tests in `tests/test_agents_docs.py` pin every path the prompt names,
+  guarded so a renamed heading, an empty blockquote, or zero extracted paths each fail loudly
+  instead of passing vacuously.
+
+Also rewrote `CONTRIBUTING.md`'s intro paragraph (missing comma, and it called a CV style
+something different from the name used later in the same file). 111/111 tests pass (109 + 2),
+ruff clean, leak gate clean at 119 files.
+
+**Still open, this milestone:** GitHub topics/description/social preview (`gh repo edit` —
+outward-facing, needs explicit approval before running; social preview itself has no `gh`
+support, manual web-UI upload). Then, once approved separately: merge to `main`, tag `v0.1.0`,
+flip the repo public.
 
 **CI coverage gaps closed, 2026-08-08, on `feat/ci-coverage-gaps`** (PR #9, merge commit
 `82bedb7`, all 6 CI jobs green). Auditing what `ci.yml` actually exercised found the leak gate
@@ -281,7 +358,8 @@ Deliberately **not** dogfooded yet, and diverging by design rather than forking/
 one — see `[[project_jobhuntkit]]` for the reasoning. The leak-prevention mechanism
 (`engine.manifest`-bounded `sync.sh` + `audit_public.py`) is now **built and verified** (see
 Current state above), which is what makes eventually syncing the private folder to this engine
-safe — actually doing that migration is still M4, deliberately last.
+safe — the first real `sync.sh pull` was optional for this M4 pass and deliberately skipped
+(2026-08-09), still last on the list whenever it does happen.
 
 ## End of Day Checklist
 
@@ -293,8 +371,15 @@ safe — actually doing that migration is still M4, deliberately last.
 
 ---
 
-> Last updated: 2026-08-08 (deferred-M3 full-CV pipeline complete — PR #2 render_cv.sh/
-> render_cv_photo.sh id-agnostic rendering, PR #7 master_cv.md + dual build_cv.py pipeline,
-> PR #8 community/ issue-orchestration folder + GitHub-issue approval rule, PR #9 CI coverage
-> gaps closed (audit_public.py + shellcheck + node --check + community.sh tests) — all merged to
-> dev; extractor issues filed, all branches cleaned up)
+> Last updated: 2026-08-09, second session (release-prep review pass on the same
+> `feat/m4-release-prep` branch: public identity standardized to `MikeC42001` in all tracked
+> content incl. LICENSE; `agents/CONTEXT.md` Step 0 now asks where the data root should live
+> instead of silently scaffolding into the checkout; README Status cut 37→11 lines and a new
+> "Or let an agent set it up" section added to replace the agent-layer discoverability it removed,
+> pinned by 2 new tests; CONTRIBUTING.md intro rewritten. Earlier the same day: M4 scope narrowed
+> to release essentials — build_paste_prompts.py and minimal-lean.md moved to Q-004/Q-005,
+> extractor good-first-issues deleted and tracked as Q-003; Tier 1 real-bug fixes (cv-tailor.md
+> --photo, CONTEXT.md ownership lists, build_cv.py duplicate-id message, engine.manifest); a full
+> documentation-accuracy sweep across SPEC/CONFIG/NO-AI/README/GETTING-STARTED/CONTRIBUTING/
+> AGENTS/templates headers, including fixing init_workspace.py's stale onboarding sequence; new
+> docs/CUSTOMIZING.md + README pointer table; CHANGELOG.md + badges. Not yet merged to `dev`.)

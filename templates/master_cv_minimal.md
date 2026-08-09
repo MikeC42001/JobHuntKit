@@ -13,13 +13,16 @@ YOUR_EMAIL_HERE
 <!-- @header-linkedin -->
 [linkedin.com/in/your-handle](https://www.linkedin.com/in/your-handle)
 
-> Master inventory for the one-column minimal layout (`render_cv_minimal.sh`). Every locked
-> block below carries a stable `<!-- @id -->` marker on its own line, immediately before the
-> block it labels (one blank line ends the block). `engine/build_cv.py` reads these by ID to
-> assemble each company's `cv-minimal.md` from `applications/offer-pages/<Company>/application.md`
-> + a template in `templates/`. See `CV_SPEC.md` (this folder) for what's locked vs.
-> configurable, and never hand-edit a generated `cv-minimal.md` — edit `application.md` and
-> re-run the generator instead. Full format rules: `docs/SPEC.md`.
+> Master inventory for the one-column minimal layout (`render_cv_minimal.sh`). This is a
+> *condensation* of `master/master_cv.md` — the primary master: every `<!-- @id -->` here should
+> also exist there, just in fuller wording (`master_cv.md` may carry extra ids this file skips,
+> never the reverse — see `docs/SPEC.md`'s id-inheritance rule). Every locked block below carries
+> a stable `<!-- @id -->` marker on its own line, immediately before the block it labels (one
+> blank line ends the block). `engine/build_cv.py` reads these by ID to assemble each company's
+> `cv-minimal.md` from `applications/offer-pages/<Company>/application.md` + a template in
+> `templates/`. See `CV_SPEC.md` (this folder) for what's locked vs. configurable, and never
+> hand-edit a generated `cv-minimal.md` — edit `application.md` and re-run the generator instead.
+> Full format rules: `docs/SPEC.md`.
 
 ## About me
 
@@ -97,9 +100,12 @@ one-page budget allows; declare in ## Omit with a reason otherwise. -->
 Full rules live in `CV_SPEC.md` (this folder) and `docs/SPEC.md` (format contract) — read both
 before writing your first `application.md`. Summary:
 
+- This file is a condensation of `master/master_cv.md` — edit the full master first, then
+  condense the same change here, same `@id`, terser wording. `agents/cv-setup.md` walks that
+  two-step flow.
 - Decide your locked Experience order in `CV_SPEC.md`, then keep this file's block order in
   sync — `check_cv.py` validates against `config.json`'s `spine.locked_order`, not this file's
   order, but keeping them matched avoids confusion.
 - Pick 1–2 portfolio projects most relevant to the role, not all of them.
 - Delete any `@exp-optional`/`@vol-example`-style block you don't need, and remove its id from
-  `config.json`'s `spine.optional_ids` to match.
+  `config.json`'s `spine.optional_ids` (shared config between both pipelines) to match.

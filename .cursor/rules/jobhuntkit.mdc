@@ -21,7 +21,8 @@ follow [agents/interview-prep.md](../../agents/interview-prep.md).
 
 For the `application.md`/template/master format contract, see
 [docs/SPEC.md](../../docs/SPEC.md). For `config.json`, see
-[docs/CONFIG.md](../../docs/CONFIG.md).
+[docs/CONFIG.md](../../docs/CONFIG.md). For which file to edit — content, structure, or the
+PDF's visual look — see [docs/CUSTOMIZING.md](../../docs/CUSTOMIZING.md).
 
 Working on this repo itself rather than a user's CV content? See
 [community/README.md](../../community/README.md) — never open, label, or close a GitHub issue
