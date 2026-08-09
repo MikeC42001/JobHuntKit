@@ -52,7 +52,7 @@ that matches your site but isn't actually a job-details page (see "Refuse, don't
    what you expect it to produce.
 4. **Add a test** to `tests/test_extractors.py`: your extractor's `matches()` claims your fixture
    and does *not* claim another extractor's fixture; `extract()` output matches `expected.md`.
-5. **Run** `python -m pytest tests/test_extractors.py`, `ruff check engine scripts tests`, and
+5. **Run** `python -m pytest tests/test_extractors.py`, `ruff check engine scripts tests .github`, and
    `python3 scripts/audit_public.py` — a synthetic fixture with a realistic-looking email or
    phone number will trip the leak gate; use `example.com`/`example.org` addresses and avoid
    phone-shaped digit strings.

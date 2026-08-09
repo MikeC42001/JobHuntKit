@@ -34,7 +34,7 @@ unreleased product name).
 ```bash
 pip install -r requirements-dev.txt
 python -m pytest tests/ -v                                   # full suite
-ruff check engine scripts tests                               # lint — same command CI runs
+ruff check engine scripts tests .github                       # lint — same command CI runs
 shellcheck -x engine/*.sh scripts/*.sh community/*.sh          # shell lint — CI runs this too
 node --check engine/render-support/*.js                        # JS syntax check — same as CI
 bash demo.sh                                                   # the actual end-to-end smoke test

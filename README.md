@@ -221,7 +221,7 @@ Nothing in this repo's history, other than the fictional demo persona, is real.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) — the short version: never commit real CV data, run
 `bash scripts/install_hooks.sh` once per clone, and `python -m pytest tests/` +
-`ruff check engine scripts tests` before a PR.
+`ruff check engine scripts tests .github` before a PR.
 
 ## License
 
