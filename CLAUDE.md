@@ -343,6 +343,30 @@ three docs quoting the command, so no Python here goes unlinted.
 **Still open:** the social-preview upload itself (Settings → General → Social preview; no `gh`
 support, manual only). Then: merge `dev` → `main`, tag `v0.1.0`, flip the repo public.
 
+## Known follow-ups (not blocking the release)
+
+Recorded here rather than only in a next-session prompt, since those get overwritten each
+session.
+
+1. **`audit_public.py` only inspects tracked files.** `git_tracked_files()` is the input, so an
+   untracked file is invisible to the gate — including one that was just added specifically to
+   be checked. This bit during the social-card work: the run reported a clean 119 files while
+   both new PNGs sat unstaged and unexamined, which reads as reassurance when it's actually
+   silence. Worth a warning line when the working tree has untracked non-ignored files, so a
+   clean result can't be mistaken for full coverage.
+2. **`workspace/scripts/end_of_day_jobhuntkit.sh` is broken for this repo** (lives in the
+   private meta-repo, not here). It runs `git add CLAUDE.md README.md PLANNING.md` as a single
+   command, and since `PLANNING.md` doesn't exist git rejects the whole pathspec and stages
+   nothing — silently, because the call is wrapped in `2>/dev/null || true`. It also never
+   covers `CONTRIBUTING.md`, `LICENSE`, `agents/`, or `tests/`, and its `read -p` confirmation
+   kills the script under `set -e` when run non-interactively.
+3. **README banner using the light social card.** `.github/social-preview-light.png` currently
+   has no consumer. GitHub renders theme-aware images in a README via `<picture>` +
+   `prefers-color-scheme`, which is the one place a light/dark pair actually works (the social
+   preview itself cannot).
+4. **`README.md`'s "Running tests" section still says 109 tests** — it's 111. Same staleness
+   trap already removed from the Status section; a hardcoded count that nothing verifies.
+
 **CI coverage gaps closed, 2026-08-08, on `feat/ci-coverage-gaps`** (PR #9, merge commit
 `82bedb7`, all 6 CI jobs green). Auditing what `ci.yml` actually exercised found the leak gate
 wasn't actually a CI gate — `audit_public.py`'s logic was unit-tested but nothing in CI ever ran
