@@ -10,7 +10,11 @@ each). Needs `python3` and `node` on `PATH`, plus Chrome, Edge, Chromium, or Bra
 Close any PDF that's open in a viewer before rendering — the render scripts detect the file lock
 and warn instead of silently failing to overwrite it.
 
-## The current pipeline (M0–M3: scan, extract, build, validate, render, verify, stage)
+## The tailored one-pager: scan, extract, build, validate, render, verify, stage
+
+This is the numbered sequence for the minimal pipeline — `cv-minimal.md`, one page, per company.
+The full CV (long-form, no page budget) is its own section below, since it's a different
+document with a different validator, not a variant of this sequence.
 
 ```bash
 # 0. Scan — what needs attention right now
@@ -24,7 +28,8 @@ python engine/extract_posting.py "applications/offer-pages/<Company>/<file>.html
 python engine/extract_posting.py --list-extractors                # see what's registered
 python engine/extract_posting.py <file> --extractor linkedin       # force one, skip dispatch
 
-# 2. Build — assembles cv-minimal.md from master + template + application.md
+# 2. Build — assembles cv-minimal.md from master + template + application.md (also writes cv.md
+#    if this company's application.md opts into pipelines: minimal, full — see "The full CV" below)
 python engine/build_cv.py "applications/offer-pages/<Company>"   # one company
 python engine/build_cv.py --all                                  # every company
 python engine/build_cv.py --all --check                          # dry run — diffs only, writes nothing
@@ -105,6 +110,16 @@ edit changes across every application before you commit to it. `engine/scan_appl
 reuses this same diff logic to classify every company as STALE, so a bare scan afterward tells
 you at a glance which applications the edit actually touched.
 
+**If the edit was to `master_cv.md` (the full master), also run the full-pipeline checks** — the
+two commands above only validate `cv-minimal.md` against `master_cv_minimal.md`. Editing the full
+master and running only the block above will report success while `cv.md` for every full-pipeline
+company silently goes stale:
+
+```bash
+python engine/check_cv.py --pipeline full            # structure gate for cv.md, every company
+python engine/check_cv.py --coverage --pipeline full # same, coverage mode
+```
+
 ## Cover letters
 
 A cover letter has no template and no `@id` scheme — it's freehand prose, written directly as
@@ -162,16 +177,17 @@ Use this when you want the full CV to reflect the same `## Include`/`## Omit`/`#
 choices as the tailored one; use the build-free path above when you don't need per-company
 anything.
 
-## Not yet built (planned for a later milestone)
+## Not yet built
 
-- The rest of the extractor family — Greenhouse, Lever, Workday, Indeed (see
-  `docs/EXTRACTORS.md`; filed as `good first issue`s). `linkedin`, `plaintext`, and `generic` are
-  in.
-- `scripts/build_paste_prompts.py` — a generated ChatGPT-paste variant of the agent instructions.
-- `templates/minimal-lean.md` — a roomier, spine-only template variant.
 - Posting-change detection (re-fetching or diffing a live posting after it's been saved). Genuine
   gap today — `extract_posting.py` records which extractor ran and when, but nothing re-checks a
-  posting after that.
+  posting after that. Tracked as `community/OPEN_QUESTIONS.md`'s Q-002.
+
+Three more things were *considered* but deliberately turned into open questions instead of
+decided work — see `community/OPEN_QUESTIONS.md` (Q-003, Q-004, Q-005) for why each is a
+question rather than a roadmap item: the rest of the extractor family (Greenhouse, Lever,
+Workday, Indeed — `linkedin`, `plaintext`, and `generic` are the ones actually in), a generated
+ChatGPT-paste variant of the agent instructions, and a roomier spine-only template.
 
 ## "Sent" is just a folder move
 

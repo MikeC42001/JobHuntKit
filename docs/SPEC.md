@@ -41,8 +41,9 @@ check_cv.py --pipeline full     check_cv.py (spine, from config.json)
 Two places carry structural knowledge that the master/template alone can't express: `config.json`
 (which Experience entries are locked, and in what order — see `docs/CONFIG.md`, shared by both
 pipelines) and `cv2html-minimal.js` (which section headings exist at all, and what order they
-render in, independent of the file's own order — `cv2html.js`/`cv2html-photo.js` have no such
-requirement, see "The full CV — id-agnostic rendering" below).
+render in, independent of the file's own order). `cv2html-photo.js` has its own, different
+section model (a hardcoded left-column order plus a sidebar fallback — see "The full CV —
+id-agnostic rendering" below); only `cv2html.js` has no section model at all.
 
 There's also a second, simpler path to the full CV that skips the build entirely — no template,
 no `application.md`, no validator, just any CV markdown straight into a renderer:
@@ -108,13 +109,34 @@ prefix that opts an item into coverage tracking automatically.
 | Syntax | Behaviour |
 |---|---|
 | `{{@id}}` | Locked, verbatim from the master. **Hard build error** if the id is missing — a locked slot must always resolve. |
-| `{{@id?}}` | Optional — rendered only if `id` is in `application.md`'s `## Include`; otherwise the line and an adjacent blank line are dropped entirely. |
-| `{{@id?section:Heading}}` | Optional *whole section* — emits `## Heading` plus the block if included, or drops both if not. |
+| `{{@id?}}` | Optional — resolves to `id`'s content if it's in `application.md`'s `## Include`, otherwise to nothing. |
+| `{{@id?section:Heading}}` | Optional *whole section* — resolves to `## Heading` plus the block if included, otherwise to nothing. |
 | `{{FIELD}}` | From `application.md`'s matching `## Field`. **Hard error** if that section is missing. |
 | `{{FIELD\|@id}}` | Same, falling back to master content when the section is absent. |
 | `{{FIELD\|literal}}` / `{{FIELD\|}}` | Same, falling back to a literal (often empty). |
 | `{{PROJECTS}}` | Expands `application.md`'s `## Projects` in list order; a bare `proj-id` pulls the master text, `proj-id: text` overrides the framing for that application only. |
 | `{{COMPANY}}` / `{{ROLE}}` | From `application.md`'s front matter. |
+
+What "resolves to nothing" actually does: the token is substituted with an empty string, then
+any run of 3+ consecutive newlines in the whole output collapses to a single blank line
+(`build_cv.py`'s `_sub`/`re.sub(r"\n{3,}", "\n\n", ...)`). A token *alone on its own line*
+therefore disappears cleanly. A token sharing a line with other text does not — the rest of that
+line's text is left behind. Optional slots belong on their own line for this reason.
+
+**Token precedence matters, and it's not what the syntax looks like.** `resolve_token` checks
+`PROJECTS`, then whether the token contains `|`, then whether it starts with `@`, then
+`COMPANY`/`ROLE`, then falls through to a plain `FIELD` lookup. The `|` check runs *before* the
+`@` check — so `{{@id|fallback}}` is **not** "resolve `@id`, falling back to `fallback`". It's
+parsed as `FIELD_TOKEN = "@id"`, which is never a real field name (`FIELD_HEADINGS` values are
+plain uppercase tokens like `TAGLINE`, never `@`-prefixed), so it always falls through to the
+literal-fallback branch and resolves to `fallback`, silently ignoring `@id`. The only supported
+locked-with-fallback form is `{{FIELD|@id}}` — field first, `@id` as the fallback — never the
+reverse.
+
+**One more special case:** `{{CONTACT_SUFFIX|...}}` gets a single leading space prepended to
+whatever it resolves to, if non-empty (`build_cv.py`'s `resolve_token`) — the template places it
+immediately after the location with no separator, so the space is added here rather than asking
+every `application.md` to remember a leading space in its own text.
 
 One trap worth knowing: HTML comments in a template are stripped, but a doc-comment whose own
 *prose* contains a literal `-->` truncates the non-greedy strip early and leaks raw text into
@@ -132,6 +154,7 @@ One per company, at `applications/offer-pages/<Company>/application.md`. Markdow
 template: minimal-full
 company: <Company>
 role: <Role>
+pipelines: minimal, full
 ---
 
 ## Tagline
@@ -142,6 +165,7 @@ role: <Role>
 - proj-id: custom framing text for this application only
 ## Skills
 **Label:** item, item, item
+## Dissertation depth
 ## Include
 - optional-spine-id
 ## Omit
@@ -149,9 +173,16 @@ role: <Role>
 ## Notes
 ```
 
-- **Front matter:** `template` picks a file from `templates/` by basename (no `.md`).
-  `company`/`role` are for humans and for `check_cv.py`'s output labels — not consumed by the
-  renderer directly, but read via `{{COMPANY}}`/`{{ROLE}}`.
+- **Front matter:** `template` picks a file from `templates/` by basename (no `.md`) — **required
+  even for a `pipelines: full`-only application**, whose value is then ignored (`build_cv.py`'s
+  `build_company()` uses `cfg.pipeline("full")["template"]` instead). `company`/`role` are for
+  humans and for `check_cv.py`'s output labels — not consumed by the renderer directly, but read
+  via `{{COMPANY}}`/`{{ROLE}}`. `pipelines` is optional and comma-separated; absent entirely (every
+  pre-existing `application.md`) means `["minimal"]` — see "The full CV" below.
+- **`## Dissertation depth`:** the fifth and least obvious `FIELD_HEADINGS` entry
+  (`engine/build_cv.py`), mapping to `{{EDU_MSC_DISSERTATION}}`. Easy to miss because it's the
+  only field named after specific content rather than a generic slot — if your template doesn't
+  use `{{EDU_MSC_DISSERTATION}}`, you'll never need this heading.
 - **`## Projects`:** a bare `proj-id` pulls the master's canonical bullet text; `proj-id: text`
   overrides the framing for this application only — the master text is untouched. Order in this
   list is the order they render in.
@@ -209,8 +240,11 @@ all. Unlike `render_cv_minimal.sh`, they don't assume `build_cv.py` already clea
    file carries these and nothing upstream removes them before this converter sees the file.
 2. A `<!-- render:stop -->` tag cuts everything from that line onward. Drop it above any section
    that shouldn't reach the PDF — e.g. a master's `## Notes for tailoring`, which would otherwise
-   render like any other section, since these converters (unlike `cv2html-minimal.js`) don't
-   recognize CV section headings and pass every `## ` through as-is.
+   render like any other section. `cv2html.js` has no section model at all and passes every `## `
+   through as markdown; `cv2html-photo.js` *does* recognize section headings (a hardcoded
+   `leftOrder` for the main column, everything else falls into the sidebar) but has no
+   `render:stop`-aware exemption for an unwanted section either — the tag is the only way to
+   keep something out of either renderer's output.
 3. `> ` lines are stripped, same convention as every other renderer here.
 
 There is no validator on this path — `check_cv.py` runs on the build side, where ids exist.
@@ -247,10 +281,19 @@ assumed:
    master's `@header-name` id.
 3. Tagline (if present): a standalone `*text*` line, zero asterisks inside, before the first
    `## `.
-4. Section headings must be exactly one of the recognized aliases (case-insensitive):
-   `about me`, `education`, `experience`, `volunteer work`, `skills`, `languages`, plus any
-   extra alias you configure in `config.json`'s `spine.heading_aliases`. Anything else still
-   renders, but generically at the end — not an error, just not what you want.
+4. Section headings must be exactly one of the recognized aliases (case-insensitive): six
+   canonical sections, each with English and Portuguese (accented and unaccented) variants —
+   `about me`/`resumo`/`sobre mim`, `education`/`formação`, `experience`/`experiência`,
+   `volunteer work`/`voluntariado`/`trabalho voluntário`, `skills`/`competências`,
+   `languages`/`línguas`/`idiomas` — the full list is `cv2html-minimal.js`'s `HEADING_ALIASES`
+   constant, not reproduced verbatim here since it's the single source of truth. **`config.json`'s
+   `spine.heading_aliases` does not extend this list — the renderer never reads `config.json` at
+   all.** That key only feeds `check_cv.py`'s own, independent copy of the alias map, used for
+   *validation*; configuring it makes the validator accept a heading the renderer still doesn't
+   recognize, which then renders generically at the end rather than in its proper section. The
+   two lists must be kept in sync by hand if you add an alias — see "Recipes" below. Anything not
+   in the renderer's own list still renders, but generically at the end — not an error, just not
+   what you want.
 5. Entry headers (Education/Experience/Volunteer): `**Title** | right-side text` — at column 0,
    no bullet prefix, no `**` inside the title, exactly one `|`.
 6. Nothing before the first entry header in a section — it is silently discarded.

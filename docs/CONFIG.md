@@ -5,7 +5,7 @@ for why avoiding a third-party parser dependency matters for a clone-and-run too
 keys fall back to the defaults below, so a fresh clone with no `config.json` at all still runs
 (with spine checking disabled — see `spine` below).
 
-Full shape (`config.example.json`, also `engine/config.py`'s `DEFAULT_CONFIG`):
+Full shape — every key `engine/config.py`'s `DEFAULT_CONFIG` ships:
 
 ```jsonc
 {
@@ -28,6 +28,12 @@ Full shape (`config.example.json`, also `engine/config.py`'s `DEFAULT_CONFIG`):
 }
 ```
 
+**`config.example.json` is not this block copy-pasted** — it's the same shape but with two
+placeholder values meant to be replaced (`person.name: "Your Name"`, `person.file_prefix:
+"Your_Name"`) where `DEFAULT_CONFIG` has real defaults (`""`, `"CV"`). Every other key matches
+exactly. Copy the example file to get started; treat this doc's block as the reference for what
+each key *means* and what it falls back to if omitted.
+
 ## `person`
 
 | Key | Default | Read by |
@@ -40,8 +46,8 @@ Full shape (`config.example.json`, also `engine/config.py`'s `DEFAULT_CONFIG`):
 
 | Key | Default | Notes |
 |---|---|---|
-| `default_photo` | `null` | **Root-relative.** `null` means `--photo` is required on the command line every time; set this once (e.g. `"images/me.png"`) to stop typing it. |
-| `default_style` | `"a"` | Which template variant a renderer defaults to, where more than one exists. |
+| `default_photo` | `null` | **Root-relative.** `null` means `--photo` is required on the command line every time; set this once (e.g. `"images/me.png"`) to stop typing it. Honored by `render_cv_minimal.sh` and `render_cv_photo.sh` only — `render_cv.sh` and `render_letter.sh` have no `--photo` flag at all. |
+| `default_style` | `"a"` | **Which of the four CSS style families** (`a`\|`b`\|`c`\|`z`, see `docs/CUSTOMIZING.md`) `render_cv_minimal.sh --style` falls back to when the flag isn't passed. Consumed only by `cv2html-minimal.js` — the other three renderers ignore this key entirely, since they have no style variants. |
 | `browser_bin` | `null` | `null` means auto-detect (Chrome/Chromium/Edge/Brave on PATH, then well-known install locations). Set this only if auto-detection picks the wrong browser or finds none — see `engine/lib.sh`'s `find_browser()`. |
 
 ## `spine` — the locked-content contract `check_cv.py` validates against
@@ -66,8 +72,8 @@ safe to run against immediately: there's genuinely nothing to check yet, and the
 
 | Key | Default | Read by |
 |---|---|---|
-| `soft_line_budget` | `57` | `build_cv.py` prints a non-fatal `WARNING` if a generated CV exceeds this many lines — an early signal before you find out the hard way from `verify_cvs.py`. |
-| `max_pages` | `1` | `verify_cvs.py`'s actual page-count gate. |
+| `soft_line_budget` | `57` | `build_cv.py` prints a non-fatal `WARNING` if a generated CV exceeds this many lines — an early signal before you find out the hard way from `verify_cvs.py`. **Minimal pipeline only** — the full pipeline never checks it, by design (there's no one-page discipline to protect there). |
+| `max_pages` | `1` | `verify_cvs.py`'s default page-count gate. Override per run with `--max-pages N`; `--max-pages 0` disables the gate entirely, which is how the full-CV pipeline's multi-page `cv.md` gets verified without touching this global default. |
 
 ## `display_names`
 

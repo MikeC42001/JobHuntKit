@@ -51,3 +51,40 @@ popular.
 What would settle it: post this as a `question`-labelled issue after the public flip, see which
 boards people actually ask for (or none), and only scope approved extractor work off real
 reactions/comments — not before.
+
+### Q-004 — Is a ChatGPT-paste variant of the agent instructions worth generating?
+
+**Status:** open
+
+`agents/cv-setup.md`, `agents/cv-tailor.md`, and `agents/interview-prep.md` are written for an
+agentic coding tool (Claude Code, Cursor) that can read files and run shell commands on its own.
+A "paste this into ChatGPT" variant was sketched as an M3 item and never built — picking it back
+up unexamined would carry the same problem the extractor issues did: assuming the answer before
+asking. The hard part is real, not cosmetic: `agents/CONTEXT.md`'s Step 0 is a filesystem
+root-probe (find `config.json`, walk up from cwd), and every task file's commands are written as
+Claude Code's `! command` syntax — neither means anything in a chat window with no filesystem
+and no shell. A generator would have to either rewrite Step 0 into "tell me what's in these
+folders" prompts, or accept that the paste variant only works for drafting prose (tailoring
+decisions, wording) and hands file operations back to the person by hand.
+
+What would settle it: whether anyone actually wants to run this outside an agentic editor at
+all — worth asking before designing around a filesystem-free rewrite of Step 0.
+
+### Q-005 — Does a spine-only `minimal-lean.md` template earn its place?
+
+**Status:** open
+
+`templates/` already has two full-inventory shapes: `minimal-full.md` (gated optional slots,
+one-page discipline) and `full.md` (same ids, mostly unconditional, no page budget). A third,
+`minimal-lean.md`, was sketched as "the locked spine only, no optional slots, no `{{PROJECTS}}`"
+— for someone who wants the one-page pipeline's validation but with even less content than
+`minimal-full.md` allows. It needs **no config or code change** to add: the minimal pipeline
+reads `template:` from each `application.md`'s own front matter
+(`docs/CONFIG.md`'s `minimal.template` is only the fallback), so a user opts in per-application
+the same way they'd pick any other template — see `docs/CUSTOMIZING.md` for exactly which files
+a new template touches.
+
+What would settle it: whether the one-page budget actually feels tight enough in practice
+(too many optional slots to choose from, not too little room) that a leaner starting point would
+help — or whether `minimal-full.md`'s own `## Include` mechanism already covers "say less" by
+just including fewer optional ids.
