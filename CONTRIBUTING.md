@@ -75,6 +75,8 @@ being weighed.
   fixture.
 - A renderer or cross-platform fix — `engine/lib.sh` is the shared cross-platform layer; a bug
   report with the exact OS/browser combination is just as valuable as a fix.
+- A new CV visual style — `docs/CUSTOMIZING.md` has the full A-to-Z recipe (five touchpoints,
+  one real trap around the dispatch chain's fallthrough).
 - A docs fix. `docs/GETTING-STARTED.md` is meant to work for a stranger with zero context; if a
   step assumed something the docs didn't explain, that's a real bug.
 

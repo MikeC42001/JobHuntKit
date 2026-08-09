@@ -38,4 +38,5 @@ as every other agent-driven flow in this toolkit.
 
 This file only covers orientation. Format rules (marker syntax, placeholder grammar,
 `application.md` headings) are in `docs/SPEC.md`. Every `config.json` key is in `docs/CONFIG.md`.
-Don't re-derive either from scratch — read them.
+Which file to edit for content vs. structure vs. the PDF's visual look — including how to add a
+new CV style — is `docs/CUSTOMIZING.md`. Don't re-derive any of these from scratch — read them.

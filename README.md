@@ -107,6 +107,17 @@ Format contract (`@id` marker rules, `{{...}}` placeholder grammar, the locked-v
 concept): [docs/SPEC.md](docs/SPEC.md). Every `config.json` key: [docs/CONFIG.md](docs/CONFIG.md).
 Running the whole pipeline by hand, no agent involved: [docs/NO-AI.md](docs/NO-AI.md).
 
+**Which file do I edit?**
+
+| I want to change... | Edit |
+|---|---|
+| CV wording | `master/master_cv.md` first, then condense the same `@id` into `master_cv_minimal.md` |
+| what one company's CV includes | that company's `application.md` (`## Include`/`## Omit`/`## Projects`) |
+| which sections exist | `templates/minimal-full.md` / `templates/full.md` |
+| the PDF's actual look | the matching `engine/render-support/cv2html*.js` |
+| the default CV style | `config.json` → `render.default_style` |
+| add a new PDF style | → [docs/CUSTOMIZING.md](docs/CUSTOMIZING.md) |
+
 ## Scripts
 
 | Script | Does |

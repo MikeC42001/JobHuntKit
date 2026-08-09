@@ -22,7 +22,9 @@ Claude Code users: the same instructions are also available as the `cv-setup`/`c
 are thin pointers to the `agents/` files above, not separate copies.
 
 For the format contract (not agent-specific — anyone can read this), see
-[`docs/SPEC.md`](docs/SPEC.md); for `config.json`, see [`docs/CONFIG.md`](docs/CONFIG.md).
+[`docs/SPEC.md`](docs/SPEC.md); for `config.json`, see [`docs/CONFIG.md`](docs/CONFIG.md); for
+which file to edit — content, structure, or the PDF's visual look — see
+[`docs/CUSTOMIZING.md`](docs/CUSTOMIZING.md).
 
 **Working on this repo itself, not a user's CV content?** See
 [`community/README.md`](community/README.md) — in particular, never open, label, or close a
