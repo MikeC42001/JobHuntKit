@@ -191,13 +191,38 @@ pip install -r requirements-dev.txt
 python3 -m pytest tests/
 ```
 
-Pure-Python, no browser or Node.js needed. The suite covers `build_cv.py` (golden-file diff
-against `examples/demo/expected/`), `check_cv.py` (broken-spine fixtures, coverage math),
-`audit_public.py`/`sync.sh` (leak-gate fixtures, plus an end-to-end check that a root's private
-content never enters `sync.sh push`'s scanned or copied file list), `init_workspace.py`,
-`scan_applications.py`, `collect_cvs.py`/`collect_letters.py`, `extract_posting.py` + the
-extractor registry, `md_to_email_txt.py`, `verify_cvs.py`, `community/community.sh`'s read-only
-guarantee, and content checks against the agent instruction files themselves (`agents/*.md`).
+Pure-Python, no browser or Node.js needed, so the whole suite runs anywhere Python does. The
+actual PDF rendering is exercised separately by CI's `render-matrix` job, which runs `demo.sh`
+end to end on Linux and macOS.
+
+### What the suite is protecting
+
+The failure mode that matters here isn't a crash. It's a plausible-looking CV. A build that
+quietly drops a job, reorders your history, or omits the one project the posting asked about
+still produces a clean one-page PDF, and you would send it without noticing. Most of these tests
+exist to make that specific kind of quiet wrongness loud:
+
+- **Your output stays byte-identical unless you meant to change it.** `build_cv.py`'s output is
+  diffed against a committed golden file, so refactoring the assembler can't silently reword a CV.
+- **A broken CV fails instead of rendering.** `check_cv.py`'s fixtures feed it a reordered
+  experience section, a dropped verbatim line, and a missing locked entry, then assert each one is
+  caught rather than passed through. A related test pins that an unconfigured root prints
+  `NOT CONFIGURED` instead of a falsely reassuring "all OK".
+- **Personal data cannot leave your machine.** These are the load-bearing ones. They run the real
+  `scripts/sync.sh` in a subprocess rather than a reimplementation of it, against a root holding
+  fake private content, and assert that content never enters the audit's file list or a push
+  destination, not merely that a rule rejected it.
+- **Instructions written for agents are checked like code.** `agents/*.md` isn't executable, so a
+  missing required flag or a renamed path in it has no coverage unless something greps for the
+  claim. `tests/test_agents_docs.py` does, added after a shipped instruction file was found
+  telling agents to run a command that exits 1 without a flag it never passed.
+
+The rest is ordinary coverage: `init_workspace.py`, `scan_applications.py`,
+`collect_cvs.py`/`collect_letters.py`, `extract_posting.py` and the extractor registry,
+`md_to_email_txt.py`, `verify_cvs.py`, and `community/community.sh`'s read-only guarantee.
+
+Run the suite before opening a pull request. CI runs the same one on Linux, macOS, and Windows,
+plus `ruff`, `shellcheck`, and the leak gate.
 
 ## Config
 
