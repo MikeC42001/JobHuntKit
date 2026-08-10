@@ -65,6 +65,16 @@ BINARY_ALLOWLIST_EXACT = [
     # persona's CV — no personal content, same fictional "Robin Vale" as the demo output above.
     ".github/social-preview.png",
     ".github/social-preview-light.png",
+    # 640x320 variants (--half): same layout at half the device pixel ratio, ~a quarter the
+    # bytes, for chat apps that skip or degrade large link-preview images.
+    ".github/social-preview-640.png",
+    ".github/social-preview-light-640.png",
+    # -share.png is the variant actually uploaded to GitHub: 1200x600 full colour, matching
+    # the dimensions of GitHub's own auto-generated card.
+    ".github/social-preview-share.png",
+    # Same card as a JPEG: lossy but ~a third the bytes, kept alongside the PNG so either
+    # can be uploaded depending on how a platform handles preview weight.
+    ".github/social-preview.jpg",
 ]
 # .woff2 is always allowed anywhere under render-support/fonts/ — covered by the prefix above,
 # not re-listed here.

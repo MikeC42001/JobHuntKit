@@ -134,33 +134,42 @@ body::before {{
     linear-gradient(90deg, {t["grid"]} 1px, transparent 1px);
   background-size: 48px 48px;
 }}
+/* left: 220px, not the 76px this started at. Two reasons, both measured against GitHub's own
+   repository-open-graph-template.png, whose red guides mark a safe zone of x 80..1200,
+   y 80..560. At 76px the text sat just outside the left guide; more importantly, a square
+   centre crop (x 320..960, which is what chat apps use for small link thumbnails) cut the
+   title in half. Shifting right keeps the left-aligned composition and the angled CV bleeding
+   off the right edge, while putting most of the title inside that crop band. */
 .copy {{
-  position: absolute; left: 76px; top: 50%;
+  position: absolute; left: 170px; top: 50%;
   transform: translateY(-50%); width: 640px; z-index: 2;
 }}
 .mark {{
-  font-family: 'Plex Mono', monospace; font-size: 15px; font-weight: 600;
+  font-family: 'Plex Mono', monospace; font-size: 19px; font-weight: 600;
   letter-spacing: 0.22em; text-transform: uppercase;
   color: {t["kicker"]}; margin-bottom: 22px;
 }}
 h1 {{
-  font-size: 82px; font-weight: 600; letter-spacing: -0.028em;
+  font-size: 106px; font-weight: 600; letter-spacing: -0.028em;
   line-height: 1; color: {t["title"]}; margin-bottom: 22px;
 }}
 .tagline {{
-  font-size: 35px; font-weight: 400; line-height: 1.28;
+  font-size: 45px; font-weight: 400; line-height: 1.28;
   letter-spacing: -0.012em; color: {t["tagline"]};
 }}
+/* bottom: 90px, not 62px — at 62px this line rendered at y 560..575, straddling the template's
+   bottom guide at y=560 and running 15px past it. It carries the one-line pitch, so it's the
+   worst thing on the card to have cropped. */
 .meta {{
-  position: absolute; left: 78px; bottom: 62px; z-index: 2;
-  font-family: 'Plex Mono', monospace; font-size: 17px;
+  position: absolute; left: 170px; bottom: 86px; z-index: 2;
+  font-family: 'Plex Mono', monospace; font-size: 20px; line-height: 1.65;
   letter-spacing: 0.02em; color: {t["meta"]};
 }}
 .meta b {{ color: {t["meta_strong"]}; font-weight: 400; }}
 /* The CV is texture, not content — it signals "this makes a clean document" without asking
    anyone to read 3px type in a feed thumbnail. */
 .paper {{
-  position: absolute; right: -46px; top: 50%; width: 352px;
+  position: absolute; right: -40px; top: 50%; width: 404px;
   transform: translateY(-50%) rotate(-7deg);
   border-radius: 7px; overflow: hidden; z-index: 1;
   box-shadow: {t["paper_shadow"]}, 0 0 0 1px {t["paper_ring"]};
@@ -177,33 +186,107 @@ h1 {{
   <div class="tagline">Job hunting made easier.</div>
 </div>
 <div class="meta">
-  <b>Markdown in, tailored PDF out.</b> &nbsp;Agent-driven or entirely by hand.
+  <b>Markdown in, tailored PDF out.</b><br>Agent-driven or entirely by hand.
 </div>
 <div class="paper"><img src="data:image/png;base64,{b64(CV_PNG)}"></div>
 """
 
 
-def render(theme, out_dir, browser):
+def render(theme, out_dir, browser, scale=1.0, suffix=""):
+    """`scale` is Chrome's device pixel ratio, not a CSS change: the page is always laid out at
+    WIDTH x HEIGHT CSS pixels, so the design is identical at any scale and only the output
+    resolution changes. Every font size in build_html() is an absolute px value tuned for a
+    1280-wide canvas — rendering into a smaller window instead would reflow it into nonsense.
+    """
     html_path = os.path.join(out_dir, f".social-card-{theme}.html")
-    png_path = os.path.join(out_dir, THEMES[theme]["file"])
+    base = THEMES[theme]["file"]
+    png_path = os.path.join(out_dir, base.replace(".png", f"{suffix}.png"))
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(build_html(theme))
 
     url = "file:///" + os.path.abspath(html_path).replace("\\", "/")
     subprocess.run([
         browser, "--headless=new", "--disable-gpu", "--hide-scrollbars",
-        "--force-device-scale-factor=1",
+        f"--force-device-scale-factor={scale}",
         f"--screenshot={png_path}", f"--window-size={WIDTH},{HEIGHT}", url,
     ], capture_output=True, check=True)
     os.remove(html_path)
-    print(f"  {theme:5s} -> {os.path.relpath(png_path, REPO)}")
+    print(f"  {theme:5s} -> {os.path.relpath(png_path, REPO)} "
+          f"({int(WIDTH * scale)}x{int(HEIGHT * scale)})")
     return png_path
+
+
+# The share card is 1200x600 — the same dimensions as GitHub's own auto-generated card.
+#
+# This is load-bearing, and it is about DIMENSIONS, not file size. Verified the hard way: at
+# 1280x640 WhatsApp downgraded the link preview to a small square thumbnail, which crops a 2:1
+# card to nonsense. At 1200x600 it renders the large banner — with a *heavier* file (319KB vs
+# the 268KB that failed). So don't "optimise" this by shrinking bytes; keep the dimensions.
+# Full colour for the same reason weight doesn't matter: an earlier 128-colour pass shaved
+# bytes at the cost of a visibly shifted palette (the avatar lost its orange) and bought
+# nothing.
+SHARE_SIZE = (1200, 600)
+
+
+def to_share_png(png_path, size=SHARE_SIZE):
+    """Resized, full-colour copy of the card for uploading as the social preview.
+
+    The 1280x640 PNG stays the archive; this is the share artifact. Needs Pillow.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        sys.exit("--share needs Pillow: pip install pillow")
+
+    share_path = png_path.replace(".png", "-share.png")
+    img = Image.open(png_path).convert("RGB")
+    if img.size != size:
+        img = img.resize(size, Image.LANCZOS)
+    img.save(share_path, optimize=True)
+    kb = os.path.getsize(share_path) / 1024
+    print(f"        -> {os.path.relpath(share_path, REPO)} "
+          f"({size[0]}x{size[1]}, full colour, {kb:.0f} KB)")
+    return share_path
+
+
+def to_jpeg(png_path, size=SHARE_SIZE, quality=70):
+    """JPEG variant of the share card — same 1200x600, a fraction of the PNG's bytes.
+
+    Kept alongside the PNG rather than instead of it. Link previews turned out not to care about
+    weight at all (see SHARE_SIZE), so the PNG is the one to upload; this exists for anywhere
+    with an actual upload cap. Verified at q70: title and subtitle stay crisp. Needs Pillow.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        sys.exit("--jpeg needs Pillow: pip install pillow")
+
+    jpg_path = os.path.splitext(png_path)[0] + ".jpg"
+    img = Image.open(png_path).convert("RGB")
+    if img.size != size:
+        img = img.resize(size, Image.LANCZOS)
+    img.save(jpg_path, "JPEG", quality=quality, optimize=True, progressive=True)
+    kb = os.path.getsize(jpg_path) / 1024
+    print(f"        -> {os.path.relpath(jpg_path, REPO)} "
+          f"({size[0]}x{size[1]}, q{quality}, {kb:.0f} KB)")
+    return jpg_path
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--theme", choices=["light", "dark", "both"], default="both")
     ap.add_argument("--out", default=HERE, help="output directory (default: .github/)")
+    ap.add_argument("--half", action="store_true",
+                    help="also emit 640x320 '-640' variants. Same layout at half the device "
+                         "pixel ratio. Not for link previews — 1200x600 is what those need.")
+    ap.add_argument("--jpeg", action="store_true",
+                    help="also emit a .jpg of the same 1200x600 card, ~a seventh of the PNG's "
+                         "bytes. Not needed for link previews (dimensions, not weight, are what "
+                         "matter there) but handy anywhere upload size is capped. Needs Pillow.")
+    ap.add_argument("--share", action="store_true",
+                    help="also emit '-share.png' at 1200x600. This is the one to upload — see "
+                         "SHARE_SIZE: chat clients downgrade a 1280x640 preview to a small "
+                         "square thumbnail, and the dimensions are what fixes it. Needs Pillow.")
     args = ap.parse_args()
 
     if not os.path.isfile(CV_PNG):
@@ -214,7 +297,13 @@ def main():
     themes = ["dark", "light"] if args.theme == "both" else [args.theme]
     print(f"browser: {browser}")
     for theme in themes:
-        render(theme, args.out, browser)
+        png = render(theme, args.out, browser)
+        if args.half:
+            render(theme, args.out, browser, scale=0.5, suffix="-640")
+        if args.share:
+            to_share_png(png)
+        if args.jpeg:
+            to_jpeg(png)
 
 
 if __name__ == "__main__":
