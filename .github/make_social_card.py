@@ -216,36 +216,35 @@ def render(theme, out_dir, browser, scale=1.0, suffix=""):
     return png_path
 
 
-# Deliberately matched to GitHub's own auto-generated card, which is PNG 1200x600 at 46KB.
-# That card demonstrably gets WhatsApp's large banner layout; this card at 1280x640 PNG (268KB)
-# got downgraded to a small square thumbnail, which crops a 2:1 image to nonsense. The exact
-# threshold isn't documented anywhere, so rather than guess at one, target the weight of the
-# image that is known to work. 1200x600 q70 lands at ~42KB.
-SHARE_SIZE = (1200, 600)
-SHARE_QUALITY = 70
+# GitHub's own auto-generated card is a 1200x600 PNG at 46KB, and that one demonstrably gets
+# WhatsApp's large banner layout; this card as a straight 1280x640 PNG (268KB) got downgraded to
+# a small square thumbnail, which crops a 2:1 image to nonsense. PNG is lossless, so the only
+# lever is the colour count: quantising to 128 colours takes it to ~91KB, roughly a third of the
+# original, while keeping the gradient smooth enough to read. Do NOT resize on the way — LANCZOS
+# invents interpolated colours and a "smaller" 1200x600 PNG measures *larger* (314KB) than the
+# native 1280x640 one.
+SHARE_COLORS = 128
 
 
-def to_jpeg(png_path, size=SHARE_SIZE, quality=SHARE_QUALITY):
-    """PNG -> the JPEG that actually gets uploaded. See SHARE_SIZE for why these numbers.
+def to_share_png(png_path, colors=SHARE_COLORS):
+    """Quantised copy of the card for uploading as the social preview.
 
-    The PNG stays the high-fidelity archive; this is the share artifact. At q70 the title and
-    subtitle are still crisp and the CV reads as the texture it's meant to be — it is only ever
-    seen as a link thumbnail, never at 100%.
+    The full-colour PNG stays the archive; this is the share artifact. Needs Pillow.
     """
     try:
         from PIL import Image
     except ImportError:
-        sys.exit("--jpeg needs Pillow: pip install pillow")
+        sys.exit("--share needs Pillow: pip install pillow")
 
-    jpg_path = os.path.splitext(png_path)[0] + ".jpg"
+    share_path = png_path.replace(".png", "-share.png")
     img = Image.open(png_path).convert("RGB")
-    if img.size != size:
-        img = img.resize(size, Image.LANCZOS)
-    img.save(jpg_path, "JPEG", quality=quality, optimize=True, progressive=True)
-    kb = os.path.getsize(jpg_path) / 1024
-    print(f"        -> {os.path.relpath(jpg_path, REPO)} "
-          f"({size[0]}x{size[1]}, q{quality}, {kb:.0f} KB — GitHub's own card is 46 KB)")
-    return jpg_path
+    img.quantize(colors=colors, method=Image.MEDIANCUT, dither=Image.FLOYDSTEINBERG).save(
+        share_path, optimize=True
+    )
+    kb = os.path.getsize(share_path) / 1024
+    print(f"        -> {os.path.relpath(share_path, REPO)} "
+          f"({colors} colours, {kb:.0f} KB — GitHub's own card is 46 KB)")
+    return share_path
 
 
 def main():
@@ -255,11 +254,11 @@ def main():
     ap.add_argument("--half", action="store_true",
                     help="also emit 640x320 '-640' variants. Same 1280x640 layout at half the "
                          "device pixel ratio, so the file is roughly a quarter the size")
-    ap.add_argument("--jpeg", action="store_true",
-                    help="also emit a full-size .jpg (~80KB vs the PNG's ~270KB). This is the "
-                         "one to upload: WhatsApp downgrades a link preview from the large "
-                         "banner to a small square thumbnail when the image is heavy, and at "
-                         "that size the card is cropped to nonsense. Needs Pillow.")
+    ap.add_argument("--share", action="store_true",
+                    help="also emit '-share.png', a 128-colour copy at ~a third the bytes. This "
+                         "is the one to upload: chat clients downgrade a heavy link preview to a "
+                         "small square thumbnail, which crops a 2:1 card to nonsense. "
+                         "Needs Pillow.")
     args = ap.parse_args()
 
     if not os.path.isfile(CV_PNG):
@@ -273,8 +272,8 @@ def main():
         png = render(theme, args.out, browser)
         if args.half:
             render(theme, args.out, browser, scale=0.5, suffix="-640")
-        if args.jpeg:
-            to_jpeg(png)
+        if args.share:
+            to_share_png(png)
 
 
 if __name__ == "__main__":
