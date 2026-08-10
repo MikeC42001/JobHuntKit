@@ -117,3 +117,76 @@ what is true now.
 What would settle it: whether anyone actually ends up with more than one root. With a single root
 and a remembered pointer, this solves a problem nobody has. It was proposed as a *consequence* of
 the marker rather than a motivation for it, and it stays here until someone wants it.
+
+### Q-007 — Should `demo.sh` render every CV style, not just the default?
+
+**Status:** open
+
+`render_cv_minimal.sh` ships four visual styles (`--style a|b|c|z`), but `demo.sh` never passes
+`--style`, so it renders whichever one `config.json`'s `render.default_style` names — currently
+one of four. Someone running the 60-second demo sees a single look and has no reason to suspect
+the others exist; `docs/CUSTOMIZING.md` describes them, which is a weaker signal than seeing them.
+
+Rendering all four for the demo persona would make the choice visible at the moment someone is
+deciding whether the output suits them, and would incidentally give CI's `render-matrix` job
+coverage of every style path instead of one.
+
+The cost is real though: four more headless-Chrome invocations per run, on a script whose selling
+point is in its name and in the README heading. It would also need a story for what the output
+folder looks like — four PDFs named per style, or a single contact sheet.
+
+What would settle it: whether anyone actually switches style after trying the demo. If everyone
+stays on the default, this is four extra renders to show something nobody chose; if people do
+switch, they are currently discovering the option by reading rather than by seeing.
+
+### Q-008 — Does any of this work on Windows without Git Bash?
+
+**Status:** open
+
+Every renderer is a Bash script, and the README's answer for Windows is one line: run it from Git
+Bash. That is honest but untested as a boundary — **nobody has established what actually happens
+on a stock Windows 10 machine with only `cmd` and PowerShell.**
+
+CI does not cover it either, and it looks like it might: the `test` matrix includes
+`windows-latest`, but that job runs pytest only. The `render-matrix` job — the one that runs the
+real `demo.sh` end to end — is ubuntu and macOS. So the Windows render path has never executed
+in CI, on any commit.
+
+Three directions, in increasing cost:
+
+1. **Document Git Bash as a hard requirement** and check the failure is legible — a clear "this
+   needs Bash" beats a cryptic error from `cmd` trying to run a `.sh` file.
+2. **Ship PowerShell equivalents** of the renderers. Duplicates logic that already exists twice
+   over (four render scripts share `lib.sh`), so it doubles the surface that can drift.
+3. **Move rendering into Python**, which is already a hard dependency, and drop Bash from the
+   critical path entirely. Biggest change, and the one that actually removes the question.
+
+What would settle it: someone running a fresh clone on a Windows 10 box with no Git Bash
+installed and recording where it breaks first. Until that exists, the honest position is that the
+Windows story is "install Git Bash", and the docs should not imply more than that.
+
+### Q-009 — Should the colour palette be settable without editing engine files?
+
+**Status:** open
+
+The palette lives as hardcoded hex values inside the converters — 13 of them in
+`engine/render-support/cv2html-minimal.js` alone — and `docs/CUSTOMIZING.md` correctly tells
+people that changing the PDF's look means editing the matching `cv2html*.js`.
+
+That is the wrong seam for something this cosmetic. Those files are **engine**, so editing them
+means a user's personal preference lives in a tracked engine file: `sync.sh push` would carry it
+back, `git pull` conflicts on it, and the engine/content separation this project is otherwise
+strict about is broken for the one change most people will want to make first.
+
+Two shapes worth comparing:
+
+- **A `render.palette` block in `config.json`**, read by the converters and injected as CSS
+  custom properties. Consistent with how every other setting works, and config.json is already
+  per-root rather than per-checkout.
+- **A CSS override file at the root**, appended after the converter's own styles. More expressive
+  (it can reach anything, not just named colours) but unbounded, so it can also break the layout
+  contract the renderer relies on.
+
+What would settle it: whether the wanted change is genuinely "a different accent colour" or
+"a different design". The first is a handful of named tokens and belongs in config; the second is
+a new style (Q-007's `--style` mechanism) and belongs in a converter after all.
