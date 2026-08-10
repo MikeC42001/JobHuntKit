@@ -183,20 +183,27 @@ h1 {{
 """
 
 
-def render(theme, out_dir, browser):
+def render(theme, out_dir, browser, scale=1.0, suffix=""):
+    """`scale` is Chrome's device pixel ratio, not a CSS change: the page is always laid out at
+    WIDTH x HEIGHT CSS pixels, so the design is identical at any scale and only the output
+    resolution changes. Every font size in build_html() is an absolute px value tuned for a
+    1280-wide canvas — rendering into a smaller window instead would reflow it into nonsense.
+    """
     html_path = os.path.join(out_dir, f".social-card-{theme}.html")
-    png_path = os.path.join(out_dir, THEMES[theme]["file"])
+    base = THEMES[theme]["file"]
+    png_path = os.path.join(out_dir, base.replace(".png", f"{suffix}.png"))
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(build_html(theme))
 
     url = "file:///" + os.path.abspath(html_path).replace("\\", "/")
     subprocess.run([
         browser, "--headless=new", "--disable-gpu", "--hide-scrollbars",
-        "--force-device-scale-factor=1",
+        f"--force-device-scale-factor={scale}",
         f"--screenshot={png_path}", f"--window-size={WIDTH},{HEIGHT}", url,
     ], capture_output=True, check=True)
     os.remove(html_path)
-    print(f"  {theme:5s} -> {os.path.relpath(png_path, REPO)}")
+    print(f"  {theme:5s} -> {os.path.relpath(png_path, REPO)} "
+          f"({int(WIDTH * scale)}x{int(HEIGHT * scale)})")
     return png_path
 
 
@@ -204,6 +211,10 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--theme", choices=["light", "dark", "both"], default="both")
     ap.add_argument("--out", default=HERE, help="output directory (default: .github/)")
+    ap.add_argument("--half", action="store_true",
+                    help="also emit 640x320 '-640' variants. Same 1280x640 layout at half the "
+                         "device pixel ratio, so the file is roughly a quarter the size — chat "
+                         "apps that skip or degrade large preview images handle it better")
     args = ap.parse_args()
 
     if not os.path.isfile(CV_PNG):
@@ -215,6 +226,8 @@ def main():
     print(f"browser: {browser}")
     for theme in themes:
         render(theme, args.out, browser)
+        if args.half:
+            render(theme, args.out, browser, scale=0.5, suffix="-640")
 
 
 if __name__ == "__main__":
