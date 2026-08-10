@@ -225,12 +225,29 @@ class Config:
 
 
 def find_root(explicit_root=None):
+    # expanduser before abspath: nothing expands a literal "~" for us. A shell does it for an
+    # unquoted path, but `export JOBHUNTKIT_ROOT="~/my-cv-data"` (quoted, as anyone in the habit
+    # of quoting paths would write) arrives here as a literal tilde and would otherwise resolve
+    # to a "~" directory relative to cwd.
     if explicit_root:
-        return os.path.abspath(explicit_root)
+        return os.path.abspath(os.path.expanduser(explicit_root))
 
     env_root = os.environ.get("JOBHUNTKIT_ROOT")
     if env_root:
-        return os.path.abspath(env_root)
+        root = os.path.abspath(os.path.expanduser(env_root))
+        # An env var is invisible at the call site — unlike --root, nothing on the command line
+        # says where the data is coming from. If it points somewhere without a config.json, say
+        # so rather than letting a command build against an empty or wrong root in silence.
+        # A warning, not an error: init_workspace.py legitimately runs before the root exists.
+        if not os.path.isfile(os.path.join(root, "config.json")):
+            sys.stderr.write(
+                f"config: JOBHUNTKIT_ROOT is set to {root}\n"
+                f"config:   but there is no config.json there. Every command in this shell will "
+                f"use that path.\n"
+                f"config:   If that's not what you meant: unset JOBHUNTKIT_ROOT, or pass --root. "
+                f"A quoted \"~\" is not expanded by the shell.\n"
+            )
+        return root
 
     probe = os.path.abspath(os.getcwd())
     while True:

@@ -131,7 +131,10 @@ python3 engine/build_cv.py       --root ~/my-cv-data/ --all
 ```
 
 Every engine command then needs the same `--root`, or `export JOBHUNTKIT_ROOT=~/my-cv-data/`
-once and drop the flag.
+once and drop the flag. That export lives in **one terminal session** — put it in `~/.bashrc` to
+make it stick, and note that a tool or agent spawning its own shell won't inherit it, so pass
+`--root` there. If the variable points somewhere without a `config.json`, the engine says so
+rather than quietly building against the wrong directory.
 
 Format contract (`@id` marker rules, `{{...}}` placeholder grammar, the locked-vs-optional spine
 concept): [docs/SPEC.md](docs/SPEC.md). Every `config.json` key: [docs/CONFIG.md](docs/CONFIG.md).
