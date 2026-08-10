@@ -216,20 +216,17 @@ def render(theme, out_dir, browser, scale=1.0, suffix=""):
     return png_path
 
 
-# GitHub's own auto-generated card is a 1200x600 PNG at 46KB, and that one demonstrably gets
-# WhatsApp's large banner layout; this card as a straight 1280x640 PNG (268KB) got downgraded to
-# a small square thumbnail, which crops a 2:1 image to nonsense. PNG is lossless, so the only
-# lever is the colour count: quantising to 128 colours takes it to ~91KB, roughly a third of the
-# original, while keeping the gradient smooth enough to read. Do NOT resize on the way — LANCZOS
-# invents interpolated colours and a "smaller" 1200x600 PNG measures *larger* (314KB) than the
-# native 1280x640 one.
+# The share card is 1200x600 — the same dimensions GitHub's own auto-generated card uses.
+# Quantised to 128 colours to keep the weight down: chat clients downgrade a heavy link preview
+# to a small square thumbnail, which crops a 2:1 card to nonsense.
+SHARE_SIZE = (1200, 600)
 SHARE_COLORS = 128
 
 
-def to_share_png(png_path, colors=SHARE_COLORS):
-    """Quantised copy of the card for uploading as the social preview.
+def to_share_png(png_path, size=SHARE_SIZE, colors=SHARE_COLORS):
+    """Resized, quantised copy of the card for uploading as the social preview.
 
-    The full-colour PNG stays the archive; this is the share artifact. Needs Pillow.
+    The full-colour 1280x640 PNG stays the archive; this is the share artifact. Needs Pillow.
     """
     try:
         from PIL import Image
@@ -238,12 +235,14 @@ def to_share_png(png_path, colors=SHARE_COLORS):
 
     share_path = png_path.replace(".png", "-share.png")
     img = Image.open(png_path).convert("RGB")
+    if img.size != size:
+        img = img.resize(size, Image.LANCZOS)
     img.quantize(colors=colors, method=Image.MEDIANCUT, dither=Image.FLOYDSTEINBERG).save(
         share_path, optimize=True
     )
     kb = os.path.getsize(share_path) / 1024
     print(f"        -> {os.path.relpath(share_path, REPO)} "
-          f"({colors} colours, {kb:.0f} KB — GitHub's own card is 46 KB)")
+          f"({size[0]}x{size[1]}, {colors} colours, {kb:.0f} KB)")
     return share_path
 
 
