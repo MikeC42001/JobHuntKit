@@ -4,6 +4,28 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.2] - 2026-08-11
+
+Documentation and repo metadata only — no engine changes.
+
+### Changed
+
+- The GitHub social-preview card is now 1200x600, matching the dimensions of GitHub's own
+  auto-generated card. This is about **dimensions, not file size**: chat clients downgrade a
+  1280x640 preview to a small square thumbnail, which crops a 2:1 card to an unreadable
+  fragment, and the 1200x600 version renders correctly while being a *larger* file. Card type
+  was also enlarged, the pitch line split across two lines to clear the CV artwork, and every
+  element moved inside the safe zone marked by GitHub's own template.
+- `.github/make_social_card.py` gained `--share` (the upload artifact), `--jpeg`, and `--half`.
+- `CLAUDE.md` describes the project's standing shape only; the dated narrative lives in
+  `logs/`.
+
+### Added
+
+- Open questions Q-007 (render every CV style in the demo), Q-008 (whether anything works on
+  Windows without Git Bash — the render path has never run on Windows in CI), and Q-009 (setting
+  the colour palette without editing engine files).
+
 ## [0.1.1] - 2026-08-10
 
 ### Fixed
@@ -105,5 +127,6 @@ First release. Everything below is new, since nothing shipped before this.
   `git tag --contains` on the closing PR's merge commit. `community/community.sh` reads it all
   back, structurally read-only.
 
+[0.1.2]: https://github.com/MikeC42001/JobHuntKit/releases/tag/v0.1.2
 [0.1.1]: https://github.com/MikeC42001/JobHuntKit/releases/tag/v0.1.1
 [0.1.0]: https://github.com/MikeC42001/JobHuntKit/releases/tag/v0.1.0
