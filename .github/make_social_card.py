@@ -145,16 +145,16 @@ body::before {{
   transform: translateY(-50%); width: 640px; z-index: 2;
 }}
 .mark {{
-  font-family: 'Plex Mono', monospace; font-size: 15px; font-weight: 600;
+  font-family: 'Plex Mono', monospace; font-size: 17px; font-weight: 600;
   letter-spacing: 0.22em; text-transform: uppercase;
   color: {t["kicker"]}; margin-bottom: 22px;
 }}
 h1 {{
-  font-size: 82px; font-weight: 600; letter-spacing: -0.028em;
+  font-size: 94px; font-weight: 600; letter-spacing: -0.028em;
   line-height: 1; color: {t["title"]}; margin-bottom: 22px;
 }}
 .tagline {{
-  font-size: 35px; font-weight: 400; line-height: 1.28;
+  font-size: 40px; font-weight: 400; line-height: 1.28;
   letter-spacing: -0.012em; color: {t["tagline"]};
 }}
 /* bottom: 90px, not 62px — at 62px this line rendered at y 560..575, straddling the template's
@@ -162,7 +162,7 @@ h1 {{
    worst thing on the card to have cropped. */
 .meta {{
   position: absolute; left: 220px; bottom: 90px; z-index: 2;
-  font-family: 'Plex Mono', monospace; font-size: 17px;
+  font-family: 'Plex Mono', monospace; font-size: 18px;
   letter-spacing: 0.02em; color: {t["meta"]};
 }}
 .meta b {{ color: {t["meta_strong"]}; font-weight: 400; }}
@@ -216,17 +216,17 @@ def render(theme, out_dir, browser, scale=1.0, suffix=""):
     return png_path
 
 
-# The share card is 1200x600 — the same dimensions GitHub's own auto-generated card uses.
-# Quantised to 128 colours to keep the weight down: chat clients downgrade a heavy link preview
-# to a small square thumbnail, which crops a 2:1 card to nonsense.
+# The share card is 1200x600 — the same dimensions as GitHub's own auto-generated card, which
+# is the one observed to keep WhatsApp's large banner layout. Full colour, no quantisation: an
+# earlier 128-colour pass shaved bytes but visibly shifted the palette (the avatar lost its
+# orange), and dimensions look like the likelier trigger for the downgrade anyway.
 SHARE_SIZE = (1200, 600)
-SHARE_COLORS = 128
 
 
-def to_share_png(png_path, size=SHARE_SIZE, colors=SHARE_COLORS):
-    """Resized, quantised copy of the card for uploading as the social preview.
+def to_share_png(png_path, size=SHARE_SIZE):
+    """Resized, full-colour copy of the card for uploading as the social preview.
 
-    The full-colour 1280x640 PNG stays the archive; this is the share artifact. Needs Pillow.
+    The 1280x640 PNG stays the archive; this is the share artifact. Needs Pillow.
     """
     try:
         from PIL import Image
@@ -237,12 +237,10 @@ def to_share_png(png_path, size=SHARE_SIZE, colors=SHARE_COLORS):
     img = Image.open(png_path).convert("RGB")
     if img.size != size:
         img = img.resize(size, Image.LANCZOS)
-    img.quantize(colors=colors, method=Image.MEDIANCUT, dither=Image.FLOYDSTEINBERG).save(
-        share_path, optimize=True
-    )
+    img.save(share_path, optimize=True)
     kb = os.path.getsize(share_path) / 1024
     print(f"        -> {os.path.relpath(share_path, REPO)} "
-          f"({size[0]}x{size[1]}, {colors} colours, {kb:.0f} KB)")
+          f"({size[0]}x{size[1]}, full colour, {kb:.0f} KB)")
     return share_path
 
 

@@ -69,9 +69,8 @@ BINARY_ALLOWLIST_EXACT = [
     # bytes, for chat apps that skip or degrade large link-preview images.
     ".github/social-preview-640.png",
     ".github/social-preview-light-640.png",
-    # -share.png is the variant actually uploaded to GitHub: same 1280x640, quantised to
-    # 128 colours (~a third of the bytes), which keeps chat clients rendering the large
-    # banner instead of a cropped square thumbnail.
+    # -share.png is the variant actually uploaded to GitHub: 1200x600 full colour, matching
+    # the dimensions of GitHub's own auto-generated card.
     ".github/social-preview-share.png",
     # Same card as a JPEG: lossy but ~a third the bytes, kept alongside the PNG so either
     # can be uploaded depending on how a platform handles preview weight.
