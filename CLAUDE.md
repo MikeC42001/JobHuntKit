@@ -85,28 +85,19 @@ the expensive part to reconstruct. `CHANGELOG.md` won't have them, by design.
 
 ## Known follow-ups (not blocking the release)
 
-Recorded here rather than only in a next-session prompt, since those get overwritten each
-session.
+Recorded here rather than only in a next-session prompt, since those get overwritten each session.
+Resolved items move to [`logs/`](logs/) — this list is only what's still open.
 
 1. **`audit_public.py` only inspects tracked files.** `git_tracked_files()` is the input, so an
    untracked file is invisible to the gate — including one that was just added specifically to
-   be checked. This bit during the social-card work: the run reported a clean 119 files while
-   both new PNGs sat unstaged and unexamined, which reads as reassurance when it's actually
-   silence. Worth a warning line when the working tree has untracked non-ignored files, so a
-   clean result can't be mistaken for full coverage.
-2. **`workspace/scripts/end_of_day_jobhuntkit.sh` is broken for this repo** (lives in the
-   private meta-repo, not here). It runs `git add CLAUDE.md README.md PLANNING.md` as a single
-   command, and since `PLANNING.md` doesn't exist git rejects the whole pathspec and stages
-   nothing — silently, because the call is wrapped in `2>/dev/null || true`. It also never
-   covers `CONTRIBUTING.md`, `LICENSE`, `agents/`, or `tests/`, and its `read -p` confirmation
-   kills the script under `set -e` when run non-interactively.
-3. **README banner using the light social card.** `.github/social-preview-light.png` currently
+   be checked. It reported a clean 119 files while both new social-card PNGs sat unstaged and
+   unexamined, which reads as reassurance when it's actually silence. Worth a warning line when
+   the working tree has untracked non-ignored files, so a clean result can't be mistaken for
+   full coverage.
+2. **README banner using the light social card.** `.github/social-preview-light.png` currently
    has no consumer. GitHub renders theme-aware images in a README via `<picture>` +
    `prefers-color-scheme`, which is the one place a light/dark pair actually works (the social
    preview itself cannot).
-4. ~~**`README.md`'s "Running tests" section still says 109 tests.**~~ **Done 2026-08-10** —
-   both that one and `CHANGELOG.md`'s copy. README's is now version-agnostic (describes
-   categories, not a count) so it can't drift again; the CHANGELOG's is corrected in place.
 
 ## Relationship to the private `job-hunt/` folder
 
