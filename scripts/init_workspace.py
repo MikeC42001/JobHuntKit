@@ -100,15 +100,24 @@ def resolve_root(explicit_root):
     if env_root:
         return os.path.abspath(env_root), "$JOBHUNTKIT_ROOT"
 
+    pointer = cfgmod.read_pointer()
+    if pointer:
+        return pointer, f"{cfgmod.POINTER_NAME} (remembered from an earlier --root)"
+
     probe = os.path.abspath(os.getcwd())
     while True:
-        if os.path.isfile(os.path.join(probe, "config.json")):
-            looks_like_a_root = any(
-                os.path.isdir(os.path.join(probe, d)) for d in ("master", "templates", "applications")
-            )
-            if not looks_like_a_root:
-                return None, probe
-            return probe, "an existing config.json found above the current directory"
+        # cfgmod.is_root is the single source of truth for "is this a root" — a constant marker
+        # file, not the presence of config.json. This function used to carry its own heuristic
+        # (config.json plus a master/templates/applications sibling), which was the only guard
+        # anywhere against claiming an unrelated project; every other engine script went through
+        # the unguarded find_root(). One check now, in one place.
+        if cfgmod.is_root(probe):
+            return probe, "an existing root found above the current directory"
+        if os.path.isfile(os.path.join(probe, "config.json")) and any(
+            os.path.isdir(os.path.join(probe, d)) for d in ("master", "templates", "applications")
+        ):
+            # Pre-marker root (scaffolded before markers existed). Adopt it and migrate.
+            return probe, "an existing root found above the current directory (pre-marker)"
         parent = os.path.dirname(probe)
         if parent == probe:
             break
@@ -266,6 +275,24 @@ def main(argv=None):
         for src in missing_sources:
             print(f"  {src}", file=sys.stderr)
         return 1
+
+    if not args.check:
+        # The marker is what makes this directory findable as a root. Writing it for a root that
+        # predates markers is the migration path: a one-time, silent-to-the-user upgrade rather
+        # than a break for anyone who scaffolded before this existed.
+        if cfgmod.write_marker(root) and "pre-marker" in rule:
+            print(f"init_workspace: added {cfgmod.MARKER_NAME} to this existing root.")
+
+        # Remember an external root so later commands don't need --root or an exported variable.
+        # Only for an external root: when root is the checkout, the fallback already lands here,
+        # and a pointer would be redundant state that could go stale.
+        external = os.path.abspath(root) != os.path.abspath(REPO_ROOT)
+        if external:
+            pointer_path = os.path.join(REPO_ROOT, cfgmod.POINTER_NAME)
+            with open(pointer_path, "w", encoding="utf-8", newline="\n") as f:
+                f.write(root + "\n")
+            print(f"init_workspace: remembered this root in {cfgmod.POINTER_NAME} — later "
+                  f"commands find it without --root.")
 
     print_report(root, rule, report, args.check)
     return 0

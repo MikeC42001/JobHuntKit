@@ -25,9 +25,23 @@ Two honest tradeoffs, pick the one that fits:
   that's the shape.
 - **`--root` pointing outside the checkout** (your own private repo, a synced folder, anywhere)
   fully decouples data from code. This is the right choice if you intend to `git pull` engine
-  updates regularly and want zero chance of the two tangling. Every command below still works —
-  just add `--root <your dir>` to each one, or `export JOBHUNTKIT_ROOT=<your dir>` once per
-  shell so you don't have to repeat it.
+  updates regularly and want zero chance of the two tangling. **You only pass `--root` once**:
+  `init_workspace.py` remembers it in `.jobhuntkit-root` (gitignored) and later commands find it
+  on their own. To override for a single command, pass `--root` again; to point a whole shell
+  somewhere else, `export JOBHUNTKIT_ROOT=<your dir>`; to forget it entirely, delete
+  `.jobhuntkit-root`.
+
+Whenever the root isn't the plain default, commands print one line saying which rule chose it —
+an env var or a remembered pointer is otherwise invisible at the call site, and the pointer
+survives reboots.
+
+### How a root is identified
+
+Every root contains a `.jobhuntkit` marker file holding the constant `jobhuntkit-root/1`. That,
+not the presence of `config.json`, is what makes a directory a root — `config.json` is far too
+common a filename, and keying on it meant any unrelated project containing one could be claimed
+as your root. `init_workspace.py` writes the marker, including into an older root that predates
+it (a one-time upgrade, reported when it happens).
 
 `init_workspace.py` is safe to re-run any time — it never overwrites a file that could hold your
 data, and reports what it skipped. `--check` previews what it would do without writing anything.

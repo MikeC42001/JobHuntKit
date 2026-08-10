@@ -1,5 +1,17 @@
 # CONFIG.md — every `config.json` key
 
+> **Finding the root comes first.** `config.json` describes a root; it does not identify one.
+> A root is identified by a `.jobhuntkit` marker file containing `jobhuntkit-root/1`, and is
+> resolved in this order:
+>
+> ```
+> --root  >  $JOBHUNTKIT_ROOT  >  .jobhuntkit-root  >  walk up from cwd  >  the checkout
+> ```
+>
+> `.jobhuntkit-root` is written (gitignored) when `init_workspace.py` is given an external
+> `--root`, so you pass the flag once rather than every time. Delete it to forget. Whenever the
+> answer isn't the plain default, the resolving command prints which rule fired.
+
 `config.json` is deliberately JSON, not YAML/TOML — see `engine/build_cv.py`'s module docstring
 for why avoiding a third-party parser dependency matters for a clone-and-run toolkit. Missing
 keys fall back to the defaults below, so a fresh clone with no `config.json` at all still runs
