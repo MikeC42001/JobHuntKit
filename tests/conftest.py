@@ -46,3 +46,31 @@ def bash_executable():
             if os.path.isfile(candidate):
                 return candidate
     return "bash"
+
+
+@pytest.fixture(autouse=True)
+def isolate_root_pointer():
+    """Keep `.jobhuntkit-root` out of the test suite's blast radius, in both directions.
+
+    `init_workspace.py --root <external>` writes that pointer into the *checkout*, which is
+    global state: without this, one test scaffolding to its tmp_path silently repointed every
+    later test's root resolution at a temp directory that pytest had already deleted. It also
+    means a developer's own remembered root can't influence a test run.
+
+    Saved and restored rather than just deleted, so running the suite doesn't cost you the root
+    you had configured.
+    """
+    pointer = os.path.join(REPO_ROOT, ".jobhuntkit-root")
+    saved = None
+    if os.path.isfile(pointer):
+        with open(pointer, "r", encoding="utf-8") as f:
+            saved = f.read()
+        os.remove(pointer)
+    try:
+        yield
+    finally:
+        if os.path.isfile(pointer):
+            os.remove(pointer)
+        if saved is not None:
+            with open(pointer, "w", encoding="utf-8", newline="\n") as f:
+                f.write(saved)

@@ -88,3 +88,32 @@ What would settle it: whether the one-page budget actually feels tight enough in
 (too many optional slots to choose from, not too little room) that a leaner starting point would
 help — or whether `minimal-full.md`'s own `## Include` mechanism already covers "say less" by
 just including fewer optional ids.
+
+### Q-006 — Should there be a way to list every JobHuntKit root on a machine?
+
+**Status:** open
+
+As of v0.1.1 every root carries a `.jobhuntkit` marker containing the constant
+`jobhuntkit-root/1` — added so root detection stops relying on the presence of `config.json`,
+which is far too common a filename. A constant is also *discoverable* in a way a heuristic never
+was: you cannot reliably scan a disk for "directories whose `config.json` has plausible keys," but
+you can scan for a file whose first line is a known constant.
+
+That would make a `scripts/find_roots.py` possible, which would answer:
+
+- "Where did I put my CV data?" — the question `.jobhuntkit-root` exists to stop you asking, but
+  which still applies on a second machine, or after moving the folder.
+- Whether a stale `.jobhuntkit-root` pointer has a real root elsewhere it should be repointed at,
+  instead of just reporting a broken path.
+- That deliberately-multiple roots exist — your own set plus, say, a copy you scaffolded while
+  helping someone else set the toolkit up.
+
+Design notes if it happens: bound the scan to `$HOME` by default with a `--path` override, and
+skip `node_modules`, `.git`, and similar, because a full-disk walk is slow (especially on
+Windows). A registry file listing known roots is the tempting alternative and is worse — it is
+duplicated state that goes stale the moment a folder moves, where a bounded scan always reports
+what is true now.
+
+What would settle it: whether anyone actually ends up with more than one root. With a single root
+and a remembered pointer, this solves a problem nobody has. It was proposed as a *consequence* of
+the marker rather than a motivation for it, and it stays here until someone wants it.
