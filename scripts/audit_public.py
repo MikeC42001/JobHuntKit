@@ -69,6 +69,10 @@ BINARY_ALLOWLIST_EXACT = [
     # bytes, for chat apps that skip or degrade large link-preview images.
     ".github/social-preview-640.png",
     ".github/social-preview-light-640.png",
+    # The JPEG is the variant actually uploaded to GitHub: same 1280x640, ~a third of the
+    # bytes, which keeps chat clients rendering the large banner instead of a cropped
+    # square thumbnail.
+    ".github/social-preview.jpg",
 ]
 # .woff2 is always allowed anywhere under render-support/fonts/ — covered by the prefix above,
 # not re-listed here.

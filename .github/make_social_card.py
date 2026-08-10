@@ -134,8 +134,14 @@ body::before {{
     linear-gradient(90deg, {t["grid"]} 1px, transparent 1px);
   background-size: 48px 48px;
 }}
+/* left: 220px, not the 76px this started at. Two reasons, both measured against GitHub's own
+   repository-open-graph-template.png, whose red guides mark a safe zone of x 80..1200,
+   y 80..560. At 76px the text sat just outside the left guide; more importantly, a square
+   centre crop (x 320..960, which is what chat apps use for small link thumbnails) cut the
+   title in half. Shifting right keeps the left-aligned composition and the angled CV bleeding
+   off the right edge, while putting most of the title inside that crop band. */
 .copy {{
-  position: absolute; left: 76px; top: 50%;
+  position: absolute; left: 220px; top: 50%;
   transform: translateY(-50%); width: 640px; z-index: 2;
 }}
 .mark {{
@@ -151,8 +157,11 @@ h1 {{
   font-size: 35px; font-weight: 400; line-height: 1.28;
   letter-spacing: -0.012em; color: {t["tagline"]};
 }}
+/* bottom: 90px, not 62px — at 62px this line rendered at y 560..575, straddling the template's
+   bottom guide at y=560 and running 15px past it. It carries the one-line pitch, so it's the
+   worst thing on the card to have cropped. */
 .meta {{
-  position: absolute; left: 78px; bottom: 62px; z-index: 2;
+  position: absolute; left: 220px; bottom: 90px; z-index: 2;
   font-family: 'Plex Mono', monospace; font-size: 17px;
   letter-spacing: 0.02em; color: {t["meta"]};
 }}
@@ -207,14 +216,41 @@ def render(theme, out_dir, browser, scale=1.0, suffix=""):
     return png_path
 
 
+def to_jpeg(png_path, quality=90):
+    """PNG -> JPEG at the same resolution, ~a third of the bytes.
+
+    Why this exists: WhatsApp (and other chat clients) render a link preview as a large banner
+    only while the preview image is light enough to fetch and cache quickly. At ~270KB this
+    card was downgraded to a small square thumbnail, which crops a 2:1 image to nonsense —
+    GitHub's own auto-generated card, being flat colour, stays under that bar and keeps the
+    banner. Verified at q90: no visible banding on the dark gradient.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        sys.exit("--jpeg needs Pillow: pip install pillow")
+
+    jpg_path = os.path.splitext(png_path)[0] + ".jpg"
+    Image.open(png_path).convert("RGB").save(
+        jpg_path, "JPEG", quality=quality, optimize=True, progressive=True
+    )
+    kb = os.path.getsize(jpg_path) / 1024
+    print(f"        -> {os.path.relpath(jpg_path, REPO)} ({kb:.0f} KB, q{quality})")
+    return jpg_path
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--theme", choices=["light", "dark", "both"], default="both")
     ap.add_argument("--out", default=HERE, help="output directory (default: .github/)")
     ap.add_argument("--half", action="store_true",
                     help="also emit 640x320 '-640' variants. Same 1280x640 layout at half the "
-                         "device pixel ratio, so the file is roughly a quarter the size — chat "
-                         "apps that skip or degrade large preview images handle it better")
+                         "device pixel ratio, so the file is roughly a quarter the size")
+    ap.add_argument("--jpeg", action="store_true",
+                    help="also emit a full-size .jpg (~80KB vs the PNG's ~270KB). This is the "
+                         "one to upload: WhatsApp downgrades a link preview from the large "
+                         "banner to a small square thumbnail when the image is heavy, and at "
+                         "that size the card is cropped to nonsense. Needs Pillow.")
     args = ap.parse_args()
 
     if not os.path.isfile(CV_PNG):
@@ -225,9 +261,11 @@ def main():
     themes = ["dark", "light"] if args.theme == "both" else [args.theme]
     print(f"browser: {browser}")
     for theme in themes:
-        render(theme, args.out, browser)
+        png = render(theme, args.out, browser)
         if args.half:
             render(theme, args.out, browser, scale=0.5, suffix="-640")
+        if args.jpeg:
+            to_jpeg(png)
 
 
 if __name__ == "__main__":
