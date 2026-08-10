@@ -216,14 +216,21 @@ def render(theme, out_dir, browser, scale=1.0, suffix=""):
     return png_path
 
 
-def to_jpeg(png_path, quality=90):
-    """PNG -> JPEG at the same resolution, ~a third of the bytes.
+# Deliberately matched to GitHub's own auto-generated card, which is PNG 1200x600 at 46KB.
+# That card demonstrably gets WhatsApp's large banner layout; this card at 1280x640 PNG (268KB)
+# got downgraded to a small square thumbnail, which crops a 2:1 image to nonsense. The exact
+# threshold isn't documented anywhere, so rather than guess at one, target the weight of the
+# image that is known to work. 1200x600 q70 lands at ~42KB.
+SHARE_SIZE = (1200, 600)
+SHARE_QUALITY = 70
 
-    Why this exists: WhatsApp (and other chat clients) render a link preview as a large banner
-    only while the preview image is light enough to fetch and cache quickly. At ~270KB this
-    card was downgraded to a small square thumbnail, which crops a 2:1 image to nonsense —
-    GitHub's own auto-generated card, being flat colour, stays under that bar and keeps the
-    banner. Verified at q90: no visible banding on the dark gradient.
+
+def to_jpeg(png_path, size=SHARE_SIZE, quality=SHARE_QUALITY):
+    """PNG -> the JPEG that actually gets uploaded. See SHARE_SIZE for why these numbers.
+
+    The PNG stays the high-fidelity archive; this is the share artifact. At q70 the title and
+    subtitle are still crisp and the CV reads as the texture it's meant to be — it is only ever
+    seen as a link thumbnail, never at 100%.
     """
     try:
         from PIL import Image
@@ -231,11 +238,13 @@ def to_jpeg(png_path, quality=90):
         sys.exit("--jpeg needs Pillow: pip install pillow")
 
     jpg_path = os.path.splitext(png_path)[0] + ".jpg"
-    Image.open(png_path).convert("RGB").save(
-        jpg_path, "JPEG", quality=quality, optimize=True, progressive=True
-    )
+    img = Image.open(png_path).convert("RGB")
+    if img.size != size:
+        img = img.resize(size, Image.LANCZOS)
+    img.save(jpg_path, "JPEG", quality=quality, optimize=True, progressive=True)
     kb = os.path.getsize(jpg_path) / 1024
-    print(f"        -> {os.path.relpath(jpg_path, REPO)} ({kb:.0f} KB, q{quality})")
+    print(f"        -> {os.path.relpath(jpg_path, REPO)} "
+          f"({size[0]}x{size[1]}, q{quality}, {kb:.0f} KB — GitHub's own card is 46 KB)")
     return jpg_path
 
 
