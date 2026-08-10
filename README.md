@@ -128,12 +128,14 @@ Every workflow here has agent instructions in [`AGENTS.md`](AGENTS.md), usable f
 Cursor, Codex, or anything else that reads that filename convention. To go from nothing to a
 working setup, paste this at an agent that can run shell commands:
 
-> Clone https://github.com/MikeC42001/JobHuntKit and set it up for me.
->
-> Read `AGENTS.md` first, then follow `agents/cv-setup.md` to build my content layer.
->
-> Ask me for my real background before writing anything into my CV. Don't invent employers,
-> dates, or achievements. Leave a placeholder and ask me instead.
+```text
+Clone https://github.com/MikeC42001/JobHuntKit and set it up for me.
+
+Read `AGENTS.md` first, then follow `agents/cv-setup.md` to build my content layer.
+
+Ask me for my real background before writing anything into my CV. Don't invent employers,
+dates, or achievements. Leave a placeholder and ask me instead.
+```
 
 It will ask where your CV data should live, inside the clone or in its own directory, before
 scaffolding anything.
@@ -189,7 +191,7 @@ pip install -r requirements-dev.txt
 python3 -m pytest tests/
 ```
 
-Pure-Python, no browser or Node.js needed — 109 tests across `build_cv.py` (golden-file diff
+Pure-Python, no browser or Node.js needed. The suite covers `build_cv.py` (golden-file diff
 against `examples/demo/expected/`), `check_cv.py` (broken-spine fixtures, coverage math),
 `audit_public.py`/`sync.sh` (leak-gate fixtures, plus an end-to-end check that a root's private
 content never enters `sync.sh push`'s scanned or copied file list), `init_workspace.py`,

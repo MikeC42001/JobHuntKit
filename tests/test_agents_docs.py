@@ -11,9 +11,12 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 AGENTS_DIR = os.path.join(REPO_ROOT, "agents")
 README_PATH = os.path.join(REPO_ROOT, "README.md")
 
-# README.md carries a copy-paste bootstrap prompt under this heading, as a blockquote. Every
-# backticked path inside it is a file someone's agent will be told to open on a fresh clone.
+# README.md carries a copy-paste bootstrap prompt under this heading, inside a fenced code block
+# (a fence, not a blockquote, because GitHub only renders its copy button on fenced code — and
+# copying is the entire point of that block). Every backticked path inside it is a file someone's
+# agent will be told to open on a fresh clone.
 BOOTSTRAP_HEADING = "## Or let an agent set it up"
+BOOTSTRAP_FENCE_RE = re.compile(r"^```[a-z]*\n(.*?)^```", re.MULTILINE | re.DOTALL)
 BACKTICKED_PATH_RE = re.compile(r"`([A-Za-z0-9_./-]+\.(?:md|py|sh|json))`")
 
 # Only actual invocations (the "! bash ..." lines Claude Code runs), not prose mentions of the
@@ -63,7 +66,7 @@ def test_context_md_write_allowlist_covers_both_masters():
 
 
 def _bootstrap_prompt_block():
-    """The blockquote body under BOOTSTRAP_HEADING. Asserts its way there rather than returning
+    """The fenced code block under BOOTSTRAP_HEADING. Asserts its way there rather than returning
     an empty string, so a renamed heading fails loudly instead of passing vacuously."""
     with open(README_PATH, "r", encoding="utf-8") as f:
         text = f.read()
@@ -73,8 +76,12 @@ def _bootstrap_prompt_block():
         "'I have an agent open' to a working clone, so don't drop it silently."
     )
     section = text.split(BOOTSTRAP_HEADING, 1)[1].split("\n## ", 1)[0]
-    quoted = [ln.lstrip("> ").rstrip() for ln in section.splitlines() if ln.startswith(">")]
-    return "\n".join(quoted)
+    fence = BOOTSTRAP_FENCE_RE.search(section)
+    assert fence, (
+        "the bootstrap prompt is no longer in a fenced code block — it needs the fence for "
+        "GitHub's copy button, which is the only reason that block exists"
+    )
+    return fence.group(1)
 
 
 def test_bootstrap_prompt_references_only_real_files():
@@ -82,7 +89,7 @@ def test_bootstrap_prompt_references_only_real_files():
     or move one and every new user's agent gets sent at a path that doesn't exist — the same
     failure mode as cv-tailor.md's missing --photo, and nothing else in the suite would catch it."""
     prompt = _bootstrap_prompt_block()
-    assert prompt.strip(), "the bootstrap prompt blockquote is empty"
+    assert prompt.strip(), "the bootstrap prompt code block is empty"
 
     paths = BACKTICKED_PATH_RE.findall(prompt)
     assert paths, "no backticked file paths found in the bootstrap prompt — did its format change?"
