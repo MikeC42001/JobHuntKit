@@ -4,7 +4,7 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/).
 
-## [0.1.0] - 2026-08-09
+## [0.1.0] - 2026-08-10
 
 First release. Everything below is new, since nothing shipped before this.
 
@@ -65,7 +65,7 @@ First release. Everything below is new, since nothing shipped before this.
   `scripts/install_hooks.sh`.
 
 **Quality**
-- 109 pytest tests, pure-Python, no browser/Node required — golden-file diffs, structure/
+- 111 pytest tests, pure-Python, no browser/Node required — golden-file diffs, structure/
   coverage fixtures, leak-gate fixtures, scaffolding, scan/collect/extractor logic, and content
   checks against the agent instruction files themselves.
 - CI (`.github/workflows/ci.yml`), three jobs: `lint` (`ruff`, the leak gate for real,
