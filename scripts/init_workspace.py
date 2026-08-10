@@ -209,13 +209,25 @@ def print_report(root, rule, report, check_only):
     print("  5. master/CV_SPEC.md              decide what's locked vs. per-application")
     print(f'  6. rename "{EXAMPLE_COMPANY}" under applications/offer-pages/ to your first real')
     print("     posting, and edit its application.md")
-    print("  7. python engine/build_cv.py --all")
-    print("     python engine/check_cv.py")
+    # If the root isn't this checkout, every later command needs --root too. Printing them
+    # without it sends someone who deliberately chose a separate root at the wrong data.
+    external = os.path.abspath(root) != os.path.abspath(REPO_ROOT)
+    root_flag = f" --root {root}" if external else ""
+    print(f"  7. python engine/build_cv.py{root_flag} --all")
+    print(f"     python engine/check_cv.py{root_flag}")
+    if external:
+        print()
+        print("Your data root is not this checkout, so every engine command needs --root (above),")
+        print(f"or export JOBHUNTKIT_ROOT={root} once and drop the flag.")
     print()
     print("Full walkthrough: docs/GETTING-STARTED.md")
     print()
-    print("Nothing under master/, profile/, applications/, produced/, or images/, and no")
-    print("config.json, is ever committed from this checkout — .gitignore already excludes them.")
+    if external:
+        print("Your data lives outside this checkout, so nothing above is at risk of being")
+        print("committed here. Version it separately if you want history for it.")
+    else:
+        print("Nothing under master/, profile/, applications/, produced/, or images/, and no")
+        print("config.json, is ever committed from this checkout — .gitignore already excludes them.")
     print("--force only ever re-copies engine-owned CV template(s), never anything above.")
 
 

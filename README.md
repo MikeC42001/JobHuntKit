@@ -121,13 +121,17 @@ Fill in `config.json`, `profile/background.md`, and `master/master_cv.md` (then 
 `master/master_cv_minimal.md` — same ids, terser wording), decide your locked spine, then
 build/validate/render/verify the same way `demo.sh` does.
 
-`--root` can point anywhere, including outside this checkout entirely — your own private repo,
-for instance — so the engine never needs to touch your data directly:
+`--root` is a **directory of your own**, created for you on first run. It can live anywhere,
+including outside this checkout entirely — your own private repo, for instance — so the engine
+never needs to touch your data directly:
 
 ```bash
-python3 scripts/init_workspace.py --root ~/my-cv-data
-python3 engine/build_cv.py --root ~/my-cv-data --all
+python3 scripts/init_workspace.py --root ~/my-cv-data/     # creates the directory
+python3 engine/build_cv.py       --root ~/my-cv-data/ --all
 ```
+
+Every engine command then needs the same `--root`, or `export JOBHUNTKIT_ROOT=~/my-cv-data/`
+once and drop the flag.
 
 Format contract (`@id` marker rules, `{{...}}` placeholder grammar, the locked-vs-optional spine
 concept): [docs/SPEC.md](docs/SPEC.md). Every `config.json` key: [docs/CONFIG.md](docs/CONFIG.md).
