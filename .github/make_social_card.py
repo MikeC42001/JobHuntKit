@@ -246,6 +246,29 @@ def to_share_png(png_path, size=SHARE_SIZE, colors=SHARE_COLORS):
     return share_path
 
 
+def to_jpeg(png_path, size=SHARE_SIZE, quality=70):
+    """JPEG variant of the share card — same 1200x600, roughly a third of the PNG's bytes.
+
+    Kept alongside the PNG rather than instead of it: PNG is lossless and preserves the gradient
+    exactly, JPEG is far lighter (~42KB vs ~119KB) if a platform turns out to care about weight.
+    Verified at q70: title and subtitle stay crisp, the CV still reads as texture. Needs Pillow.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        sys.exit("--jpeg needs Pillow: pip install pillow")
+
+    jpg_path = os.path.splitext(png_path)[0] + ".jpg"
+    img = Image.open(png_path).convert("RGB")
+    if img.size != size:
+        img = img.resize(size, Image.LANCZOS)
+    img.save(jpg_path, "JPEG", quality=quality, optimize=True, progressive=True)
+    kb = os.path.getsize(jpg_path) / 1024
+    print(f"        -> {os.path.relpath(jpg_path, REPO)} "
+          f"({size[0]}x{size[1]}, q{quality}, {kb:.0f} KB)")
+    return jpg_path
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--theme", choices=["light", "dark", "both"], default="both")
@@ -253,6 +276,10 @@ def main():
     ap.add_argument("--half", action="store_true",
                     help="also emit 640x320 '-640' variants. Same 1280x640 layout at half the "
                          "device pixel ratio, so the file is roughly a quarter the size")
+    ap.add_argument("--jpeg", action="store_true",
+                    help="also emit a .jpg of the same 1200x600 card (~42KB vs the share PNG's "
+                         "~119KB). Lossy, but far lighter if a platform degrades heavy previews. "
+                         "Needs Pillow.")
     ap.add_argument("--share", action="store_true",
                     help="also emit '-share.png', a 128-colour copy at ~a third the bytes. This "
                          "is the one to upload: chat clients downgrade a heavy link preview to a "
@@ -273,6 +300,8 @@ def main():
             render(theme, args.out, browser, scale=0.5, suffix="-640")
         if args.share:
             to_share_png(png)
+        if args.jpeg:
+            to_jpeg(png)
 
 
 if __name__ == "__main__":

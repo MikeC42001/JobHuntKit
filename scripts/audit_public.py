@@ -73,6 +73,9 @@ BINARY_ALLOWLIST_EXACT = [
     # 128 colours (~a third of the bytes), which keeps chat clients rendering the large
     # banner instead of a cropped square thumbnail.
     ".github/social-preview-share.png",
+    # Same card as a JPEG: lossy but ~a third the bytes, kept alongside the PNG so either
+    # can be uploaded depending on how a platform handles preview weight.
+    ".github/social-preview.jpg",
 ]
 # .woff2 is always allowed anywhere under render-support/fonts/ — covered by the prefix above,
 # not re-listed here.
