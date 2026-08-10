@@ -1,8 +1,7 @@
 # JobHuntKit
 
 **Description:** Open-source toolkit that generates tailored, one-page CVs per job posting from
-a tagged master CV + a per-posting selection file. Extracted and genericized from a private CV
-pipeline — that private source is never touched, moved, or migrated by this project.
+a tagged master CV + a per-posting selection file.
 
 **Collaborators:** Solo (MikeC42001)
 **GitHub:** `MikeC42001/JobHuntKit`, **private** (started private deliberately, 2026-08-04 — flip
@@ -98,15 +97,6 @@ Resolved items move to [`logs/`](logs/) — this list is only what's still open.
    has no consumer. GitHub renders theme-aware images in a README via `<picture>` +
    `prefers-color-scheme`, which is the one place a light/dark pair actually works (the social
    preview itself cannot).
-
-## Relationship to the private `job-hunt/` folder
-
-Deliberately **not** dogfooded yet, and diverging by design rather than forking/syncing from day
-one — see `[[project_jobhuntkit]]` for the reasoning. The leak-prevention mechanism
-(`engine.manifest`-bounded `sync.sh` + `audit_public.py`) is now **built and verified** (see
-Current state above), which is what makes eventually syncing the private folder to this engine
-safe — the first real `sync.sh pull` was optional for this M4 pass and deliberately skipped
-(2026-08-09), still last on the list whenever it does happen.
 
 ## End of Day Checklist
 

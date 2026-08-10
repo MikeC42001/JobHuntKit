@@ -1,8 +1,8 @@
 """extractors/linkedin.py — LinkedIn job pages, with a loud refusal for the one real failure
 mode already seen in production use: a saved *feed card* (a search-results listing snippet)
-instead of the actual job-details page. The private pipeline this was ported from hit exactly
-that once — the saved HTML had no requirements content at all, and the flow silently fell back to
-a hand-typed text file. This extractor is built specifically not to repeat that: if it recognizes
+instead of the actual job-details page. That happened for real: the saved HTML had no
+requirements content at all, and the flow silently fell back to a hand-typed text file.
+This extractor is built specifically not to repeat that: if it recognizes
 the page as LinkedIn but can't find the job-details container, it raises instead of emitting an
 empty PostingDraft.
 
