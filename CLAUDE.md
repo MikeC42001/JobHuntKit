@@ -39,7 +39,7 @@ master. `engine/build_cv.py` assembles the three into `cv-minimal.md`; `engine/c
 validates the locked spine landed correctly and reports coverage; `engine/render_cv_minimal.sh`
 renders it to PDF; `engine/verify_cvs.py` gates page count.
 
-## Current state (M0–M4 all merged to `dev`, 2026-08-09; `main` untouched, no tag yet)
+## Current state (M0–M4 done; `main` = `58c177c`, tagged `v0.1.0`, 2026-08-10; still private)
 
 Working end-to-end: clone → `bash demo.sh` → build → validate → render → verify → one-page PDF,
 now genuinely cross-platform-verified — the `render-matrix` CI job (PR #1, 2026-08-05) runs
@@ -340,8 +340,46 @@ default, and it only checks *tracked* files, so the allowlist has to be verified
 (122 files, clean) rather than before. `ruff check` extended to cover `.github` in CI and all
 three docs quoting the command, so no Python here goes unlinted.
 
+**`main` merged and `v0.1.0` tagged, 2026-08-10.** `main` had never held real content (it sat on
+`55b7151`, the initial commit, 74 behind); it's now `58c177c`, byte-identical to `dev`, CI green.
+`v0.1.0` is an annotated tag on that commit. The tag was cut and then **moved twice** the same
+day as further work landed — free while the repo is private and nobody can have fetched it, but
+that stops being true at the public flip, so treat it as frozen from then on and use `v0.1.1`
+for anything after.
+
+**Release-prep fixes, same day.** The README's agent bootstrap prompt was a blockquote, and
+GitHub only renders its copy button on fenced code — so the one block explicitly labelled "paste
+this" was the only one you couldn't copy in a click. Now a ```` ```text ```` fence.
+`tests/test_agents_docs.py` had deliberately pinned the old format (it extracted the prompt by
+filtering for `>` lines), so it now matches the fence and fails loudly if the fence is ever
+removed. Both stale hardcoded test counts (109, actually 111) are gone: README's is now
+version-agnostic so it can't drift a third time, `CHANGELOG.md`'s is corrected in place since a
+changelog entry is a dated record rather than a live number, and its `[0.1.0]` date moved to the
+day the tag was actually cut. README's "Running tests" also gained a **"What the suite is
+protecting"** section — the framing is that the failure mode here isn't a crash but a
+plausible-looking CV, with four bullets naming what each group of tests makes loud; every claim
+was checked against real test names before being written.
+
+**CI moved off the deprecated Node 20 runtime, 2026-08-10 — and the bump broke the macOS
+renderer, which is the part worth remembering.** All four actions GitHub's warning named were
+bumped to current majors: `checkout` v4→v7, `setup-python` v5→v7, `setup-node` v4→v7,
+`browser-actions/setup-chrome` v1→v2. **v2 changed its `chrome-version` default from `latest` (a
+Chromium snapshot) to `stable` (Google Chrome for Testing), and that binary hangs indefinitely on
+macOS arm64 at `--print-to-pdf`** — the job reached step `[3/10]`, the first render, and sat
+there 20 minutes until cancelled, while the same commit rendered fine on ubuntu. Fixed by
+pinning `chrome-version: latest` explicitly, with a comment so nobody removes the
+redundant-looking input later. Not a quoting problem despite the new path containing spaces;
+`render_cv_minimal.sh` quotes `"$BROWSER"` correctly. The lesson: v2's *output* contract
+(`chrome-path`) was verified before pushing and was unchanged, but the breaking change was in
+*what it installs* — for a third-party action the default inputs matter as much as the outputs,
+and only the run itself proved it. Also added **`timeout-minutes: 10`** to `render-matrix`, since
+without it a browser that never exits runs to the 6-hour default at 10x macOS billing, for a job
+that normally finishes in under a minute. The toolchain `node-version` pin went 20 → 24
+(Krypton, the current active LTS — 26 exists but isn't LTS until October). Zero deprecation
+warnings remain across the run.
+
 **Still open:** the social-preview upload itself (Settings → General → Social preview; no `gh`
-support, manual only). Then: merge `dev` → `main`, tag `v0.1.0`, flip the repo public.
+support, manual only), then the public visibility flip.
 
 ## Known follow-ups (not blocking the release)
 
@@ -364,8 +402,9 @@ session.
    has no consumer. GitHub renders theme-aware images in a README via `<picture>` +
    `prefers-color-scheme`, which is the one place a light/dark pair actually works (the social
    preview itself cannot).
-4. **`README.md`'s "Running tests" section still says 109 tests** — it's 111. Same staleness
-   trap already removed from the Status section; a hardcoded count that nothing verifies.
+4. ~~**`README.md`'s "Running tests" section still says 109 tests.**~~ **Done 2026-08-10** —
+   both that one and `CHANGELOG.md`'s copy. README's is now version-agnostic (describes
+   categories, not a count) so it can't drift again; the CHANGELOG's is corrected in place.
 
 **CI coverage gaps closed, 2026-08-08, on `feat/ci-coverage-gaps`** (PR #9, merge commit
 `82bedb7`, all 6 CI jobs green). Auditing what `ci.yml` actually exercised found the leak gate
