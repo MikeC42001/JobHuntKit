@@ -1,6 +1,6 @@
 """extractors/plaintext.py — passthrough for input that isn't HTML at all.
 
-Covers two real cases from the private pipeline this was ported from: a `.txt` file (someone
+Covers two cases that come up for real: a `.txt` file (someone
 manually transcribed a posting that couldn't be saved as HTML — a LinkedIn feed snippet with no
 real job page behind it, an API response, a screenshot OCR'd by hand) and pasted text handed
 directly to the agent flow rather than saved to a file first. Both arrive here as plain text with

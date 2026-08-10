@@ -37,6 +37,34 @@ persona ("Robin Vale," applying to a fictional company) using nothing but `pytho
 whichever Chrome/Edge/Chromium/Brave you already have installed. Requirements: Python 3.8+, a
 recent Node.js, and one Chromium-family browser. Windows users: run it from Git Bash.
 
+## Set it up
+
+Two ways, same destination.
+
+**Let an agent do it**
+
+```text
+Clone https://github.com/MikeC42001/JobHuntKit and set it up for me.
+
+Read `AGENTS.md` first, then follow `agents/cv-setup.md` to build my content layer.
+
+Ask me for my real background before writing anything into my CV. Don't invent employers,
+dates, or achievements. Leave a placeholder and ask me instead.
+```
+
+Claude Code users can skip the prompt: clone, then run `/cv-setup`.
+What that layer actually is: [The agent layer](#the-agent-layer).
+
+**Or do it yourself**
+
+```bash
+python3 scripts/init_workspace.py
+```
+
+Scaffolds `config.json`, `master/`, `profile/`, `applications/`, `templates/`, `images/`, and
+`produced/`. Walkthrough in order: **[docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)**.
+Your data doesn't have to live in the checkout: [Your own data](#your-own-data).
+
 ## How it works
 
 A chain, not two unrelated files: `master/master_cv.md` is the primary master — the complete
@@ -87,25 +115,29 @@ There's no validator on the direct-render path — `check_cv.py` runs only where
 i.e. on a built `cv-minimal.md`/`cv.md` (`--pipeline full` for the latter). See `docs/SPEC.md`'s
 "The full CV — id-agnostic rendering" for the full contract.
 
-## Quickstart with your own data
-
-```bash
-python scripts/init_workspace.py    # scaffolds config.json, master/, profile/, applications/,
-                                     # templates/, images/, produced/ from templates/
-```
+## Your own data
 
 Fill in `config.json`, `profile/background.md`, and `master/master_cv.md` (then condense it into
 `master/master_cv_minimal.md` — same ids, terser wording), decide your locked spine, then
-build/validate/render/verify the same way `demo.sh` does. Full walkthrough, in order:
-**[docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)**.
+build/validate/render/verify the same way `demo.sh` does.
 
-`--root` can point anywhere, including outside this checkout entirely — your own private repo,
-for instance — so the engine never needs to touch your data directly:
+`--root` is a **directory of your own**, created for you on first run. It can live anywhere,
+including outside this checkout entirely — your own private repo, for instance — so the engine
+never needs to touch your data directly:
 
 ```bash
-python3 scripts/init_workspace.py --root ~/my-cv-data
-python3 engine/build_cv.py --root ~/my-cv-data --all
+python3 scripts/init_workspace.py --root ~/my-cv-data/     # creates the directory
+python3 engine/build_cv.py       --root ~/my-cv-data/ --all
 ```
+
+**You only pass `--root` once.** `init_workspace.py` remembers it in `.jobhuntkit-root`
+(gitignored), so later commands find your data with no flag and no environment variable, from any
+directory. Pass `--root` again to override for one command, `export JOBHUNTKIT_ROOT=…` to point a
+whole shell elsewhere, or delete `.jobhuntkit-root` to forget it.
+
+Whenever the root isn't the plain default, commands print one line naming it and the rule that
+chose it — a remembered pointer is otherwise invisible, and unlike a shell variable it survives
+reboots.
 
 Format contract (`@id` marker rules, `{{...}}` placeholder grammar, the locked-vs-optional spine
 concept): [docs/SPEC.md](docs/SPEC.md). Every `config.json` key: [docs/CONFIG.md](docs/CONFIG.md).
@@ -122,25 +154,19 @@ Running the whole pipeline by hand, no agent involved: [docs/NO-AI.md](docs/NO-A
 | the default CV style | `config.json` → `render.default_style` |
 | add a new PDF style | → [docs/CUSTOMIZING.md](docs/CUSTOMIZING.md) |
 
-## Or let an agent set it up
+## The agent layer
 
 Every workflow here has agent instructions in [`AGENTS.md`](AGENTS.md), usable from Claude Code,
-Cursor, Codex, or anything else that reads that filename convention. To go from nothing to a
-working setup, paste this at an agent that can run shell commands:
+Cursor, Codex, or anything else that reads that filename convention. The setup prompt is in
+[Set it up](#set-it-up) above; this is what sits behind it.
 
-```text
-Clone https://github.com/MikeC42001/JobHuntKit and set it up for me.
+Before scaffolding anything, the agent asks where your CV data should live — inside the clone or
+in a directory of its own. It won't choose for you, and it won't invent CV facts: anything it
+doesn't know becomes a placeholder and a question.
 
-Read `AGENTS.md` first, then follow `agents/cv-setup.md` to build my content layer.
-
-Ask me for my real background before writing anything into my CV. Don't invent employers,
-dates, or achievements. Leave a placeholder and ask me instead.
-```
-
-It will ask where your CV data should live, inside the clone or in its own directory, before
-scaffolding anything.
-
-Claude Code users can skip the prompt entirely: clone, then run `/cv-setup`.
+Adapters for each tool (`.claude/skills/`, `.claude/commands/`, `.cursor/rules/`, `AGENTS.md`) are
+thin pointers to the same instruction files, so there's one source of truth and no copies to
+drift. Running the pipeline with no agent at all: [docs/NO-AI.md](docs/NO-AI.md).
 
 ## Scripts
 

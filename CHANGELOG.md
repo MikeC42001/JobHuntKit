@@ -4,6 +4,32 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.1] - 2026-08-10
+
+### Fixed
+
+- **A root is now identified by a `.jobhuntkit` marker file, not by the presence of
+  `config.json`.** That filename is one of the most common there is, so running an engine command
+  from inside an unrelated project that happened to contain one made the engine claim that
+  project as your data root. `scripts/init_workspace.py` had a guard against this; nothing else
+  did. The marker holds a constant (`jobhuntkit-root/1`), so detection is exact rather than
+  heuristic, and the walk-up no longer parses JSON at all. Existing roots are migrated
+  automatically on the next `init_workspace.py` run.
+- **A literal `~` in a root path is now expanded.** `--root "~/my-cv-data"` or a quoted
+  `JOBHUNTKIT_ROOT` previously resolved to a `~` directory relative to the current one, silently.
+- **`init_workspace.py` carries `--root` into the next steps it prints.** Scaffolding to an
+  external root then following those instructions literally used to build against the checkout.
+
+### Added
+
+- **The root is remembered.** Pass `--root` once and `init_workspace.py` records it in
+  `.jobhuntkit-root` (gitignored); later commands resolve it with no flag and no environment
+  variable, from any directory. Delete the file to forget it.
+- **Commands say which rule chose the root** whenever it isn't the plain default. An environment
+  variable or a remembered pointer is invisible at the call site, and the pointer survives
+  reboots.
+- A warning when `$JOBHUNTKIT_ROOT` or `.jobhuntkit-root` points at something that isn't a root.
+
 ## [0.1.0] - 2026-08-10
 
 First release. Everything below is new, since nothing shipped before this.
@@ -79,4 +105,5 @@ First release. Everything below is new, since nothing shipped before this.
   `git tag --contains` on the closing PR's merge commit. `community/community.sh` reads it all
   back, structurally read-only.
 
+[0.1.1]: https://github.com/MikeC42001/JobHuntKit/releases/tag/v0.1.1
 [0.1.0]: https://github.com/MikeC42001/JobHuntKit/releases/tag/v0.1.0

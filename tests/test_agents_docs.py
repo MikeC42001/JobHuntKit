@@ -15,7 +15,7 @@ README_PATH = os.path.join(REPO_ROOT, "README.md")
 # (a fence, not a blockquote, because GitHub only renders its copy button on fenced code — and
 # copying is the entire point of that block). Every backticked path inside it is a file someone's
 # agent will be told to open on a fresh clone.
-BOOTSTRAP_HEADING = "## Or let an agent set it up"
+BOOTSTRAP_HEADING = "## Set it up"
 BOOTSTRAP_FENCE_RE = re.compile(r"^```[a-z]*\n(.*?)^```", re.MULTILINE | re.DOTALL)
 BACKTICKED_PATH_RE = re.compile(r"`([A-Za-z0-9_./-]+\.(?:md|py|sh|json))`")
 

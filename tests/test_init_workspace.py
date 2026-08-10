@@ -202,3 +202,68 @@ def test_example_company_output_has_no_unresolved_tokens(tmp_path):
     # check_cv's structure gate should also treat this as a clean (if unconfigured) build.
     failures = check_cv.check_structure(cfg, company_dir, check_cv.alias_to_canon(cfg))
     assert failures == []
+
+
+def _next_steps(root, capsys):
+    """print_report's tail, captured. Called directly rather than through a scaffold so the
+    default-root case can be exercised without writing into the checkout."""
+    init_workspace.print_report(root, "test", [("wrote", "config.json")], False)
+    return capsys.readouterr().out
+
+
+def test_next_steps_carry_root_when_root_is_external(tmp_path, capsys):
+    """A scaffold to a separate root prints commands that must include --root. Without it,
+    someone who deliberately chose an external root is told to run engine commands that resolve
+    back to the checkout instead — silently building against the wrong data."""
+    out = _next_steps(str(tmp_path), capsys)
+
+    assert "build_cv.py --root" in out, (
+        "init_workspace scaffolded to an external root but told the user to run build_cv.py "
+        "with no --root, which would target the checkout instead"
+    )
+    assert "check_cv.py --root" in out
+    assert "JOBHUNTKIT_ROOT" in out, "the env-var alternative to repeating --root should be offered"
+    # The .gitignore reassurance is about *this checkout* and is meaningless for an external root.
+    assert ".gitignore already excludes them" not in out
+
+
+def test_next_steps_stay_flagless_for_the_default_root(capsys):
+    """The common case must not grow noise: root == checkout needs no --root anywhere."""
+    out = _next_steps(init_workspace.REPO_ROOT, capsys)
+
+    assert "--root" not in out, "default root should not print --root on any command"
+    assert "build_cv.py --all" in out
+    assert ".gitignore already excludes them" in out
+
+
+def test_external_root_is_remembered_default_root_is_not(tmp_path, monkeypatch):
+    """A pointer only makes sense for an external root: when root is the checkout, the fallback
+    already lands there and a pointer would be redundant state that could go stale."""
+    # conftest's isolate_root_pointer fixture saves, clears, and restores the real pointer around
+    # every test, so this can write one freely.
+    pointer = os.path.join(init_workspace.REPO_ROOT, cfgmod.POINTER_NAME)
+    assert not os.path.exists(pointer), "the isolation fixture should have cleared this"
+
+    assert _init(tmp_path) == 0
+    assert os.path.isfile(pointer), "an external --root should be remembered"
+    with open(pointer, encoding="utf-8") as f:
+        assert f.read().strip() == str(tmp_path)
+
+    # And the root itself is marked, so a later walk-up from inside it works.
+    assert cfgmod.is_root(str(tmp_path))
+
+
+def test_pointer_is_gitignored():
+    """It holds an absolute home-directory path, which on many machines contains a real name —
+    and audit_public.py only inspects *tracked* files, so it would never catch one that got
+    force-added. The marker, by contrast, must stay trackable."""
+    import subprocess
+
+    def ignored(name):
+        return subprocess.run(
+            ["git", "check-ignore", "-q", name],
+            cwd=init_workspace.REPO_ROOT,
+        ).returncode == 0
+
+    assert ignored(cfgmod.POINTER_NAME), f"{cfgmod.POINTER_NAME} must be gitignored"
+    assert not ignored(cfgmod.MARKER_NAME), f"{cfgmod.MARKER_NAME} must NOT be gitignored"

@@ -65,8 +65,7 @@ posting (a search-results listing, a feed card, a "sign in to view" wall), have 
 right page, or fall back to `--extractor generic`. A loud, actionable failure beats silently
 writing a content-free `posting_extracted.md` that someone won't notice is empty until they're
 confused why `application.md` has nothing to work from. `linkedin.py`'s feed-card refusal is the
-worked example — it exists because exactly that silent-failure case happened once in production
-use of the private pipeline this package was ported from.
+worked example — it exists because exactly that silent-failure case happened once in real use.
 
 ## What's already covered
 

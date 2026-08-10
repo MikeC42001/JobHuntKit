@@ -2,6 +2,11 @@
 # the whole point is that it doesn't leak the terms it protects.
 /.private-terms
 
+# Remembered data root, written when init_workspace.py is given an external --root. Holds a
+# machine-specific absolute path, so it is never committed. NOTE: the .jobhuntkit *marker* is a
+# different file and IS tracked — see examples/demo/.jobhuntkit.
+/.jobhuntkit-root
+
 # Your own data, if you run the toolkit from inside this checkout (root = repo root).
 # examples/demo/config.json (and its images/profile/master/applications/) is a tracked exception
 # — it's part of the shipped demo, not user data.
