@@ -1,0 +1,34 @@
+{
+  "person": {
+    "name": "Your Name",
+    "file_prefix": "Your_Name",
+    "letter_prefix": null
+  },
+  "render": {
+    "default_photo": null,
+    "default_style": "a",
+    "browser_bin": null
+  },
+  "spine": {
+    "locked_order": [],
+    "title_markers": {},
+    "optional_ids": [],
+    "verbatim_ids": [],
+    "education": { "required_titles": [], "require_detail_for": [] },
+    "heading_aliases": {}
+  },
+  "limits": { "soft_line_budget": 57, "max_pages": 1 },
+  "display_names": {},
+  "pipelines": {
+    "minimal": {
+      "master": "master/master_cv_minimal.md",
+      "template": "minimal-full",
+      "out": "cv-minimal.md"
+    },
+    "full": {
+      "master": "master/master_cv.md",
+      "template": "full",
+      "out": "cv.md"
+    }
+  }
+}

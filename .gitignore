@@ -1,0 +1,36 @@
+# Your own wordlist for scripts/audit_public.py — see .private-terms.example. Never committed;
+# the whole point is that it doesn't leak the terms it protects.
+/.private-terms
+
+# Your own data, if you run the toolkit from inside this checkout (root = repo root).
+# examples/demo/config.json (and its images/profile/master/applications/) is a tracked exception
+# — it's part of the shipped demo, not user data.
+/config.json
+/profile/
+/master/
+/applications/
+/produced/
+/images/
+/workspace/
+
+# Rendered output is a build artifact everywhere except the one committed demo hero image.
+**/generate-pdfs/
+
+# Unlike config.json/profile/master/applications/, produced/ was never part of the shipped demo —
+# it only appears once someone actually runs collect_cvs.py/collect_letters.py --root
+# examples/demo, so /produced/ above (root-anchored) doesn't reach it. Ignore it there too.
+/examples/demo/produced/
+
+# Per-company generated CV markdown regenerates from application.md on demand; the demo's copy
+# ships tracked (examples/demo/expected/ + the file itself) so the shape is visible without a
+# build step, but a real user's own applications/ tree is already covered by /applications/ above.
+
+# Node / Python housekeeping.
+node_modules/
+package-lock.json.bak
+__pycache__/
+*.pyc
+
+# OS noise.
+.DS_Store
+Thumbs.db

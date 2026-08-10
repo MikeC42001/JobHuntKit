@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff
+      - run: ruff check engine scripts tests .github
+      - name: Leak gate (audit_public.py)
+        run: python scripts/audit_public.py
+      - name: Shellcheck
+        run: shellcheck -x engine/*.sh scripts/*.sh community/*.sh
+
+  test:
+    # Pure-Python pytest suite (build/check/audit + the sync.sh leak-gate integration tests) —
+    # no browser or Node.js needed. windows-latest exercises the same bash-via-subprocess path
+    # already verified locally in development; macos/ubuntu confirm it's not a Windows fluke.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt
+      - run: python -m pytest tests/ -v
+
+  render-matrix:
+    # First real cross-platform signal for engine/lib.sh's browser-discovery and file:// URL
+    # fixes (GNU vs BSD `stat`, `file:///` slash count, `--headless=new`) — code-reviewed but,
+    # until this job, only ever run live on Windows. Runs the actual demo end-to-end: build,
+    # structure check, PDF render, one-page verify.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install Chrome
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v1
+      - name: Syntax-check the tracked JS converters
+        run: |
+          node --check engine/render-support/cv2html.js
+          node --check engine/render-support/cv2html-photo.js
+          node --check engine/render-support/cv2html-minimal.js
+          node --check engine/render-support/letter2html.js
+      - name: Run demo.sh (build, check, render, verify)
+        run: bash demo.sh
+        env:
+          BROWSER_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}

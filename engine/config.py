@@ -1,0 +1,278 @@
+"""config.py — root resolution and config.json loading, shared by every engine script.
+
+The engine (this folder) never contains personal data. Everything a person writes — their
+name, contact details, master CV, per-company applications — lives at a "root" directory that
+is resolved at runtime, not hard-coded. This is what lets the same clone serve three purposes
+with zero code changes: a 60-second demo (root = examples/demo/), your own real data (root =
+this repo checkout itself, or anywhere else via --root), and a private data directory kept
+entirely outside this repo.
+
+Root resolution order:
+    1. --root <path> on the command line
+    2. $JOBHUNTKIT_ROOT environment variable
+    3. Walk up from the current directory looking for a config.json
+    4. The repo root (this file's grandparent directory) as a last resort
+
+Every script's argparse.ArgumentParser should include ROOT_ARG as a parent so `--root` behaves
+identically everywhere.
+
+config.json is deliberately JSON, not YAML/TOML — see build_cv.py's docstring for why avoiding
+a third-party dependency matters here. Missing keys fall back to sensible defaults so a fresh
+clone with no config.json still runs (with spine checking disabled — see check_cv.py).
+"""
+
+import argparse
+import json
+import os
+import sys
+
+# Every engine script imports this module first, so this is the one place to force UTF-8 output.
+# Without it, Python on Windows defaults stdout/stderr to the console's codepage (cp1252, not
+# UTF-8) even under Git Bash — any em dash or accented character (a name, a Portuguese heading
+# alias) then prints as a mangled replacement character instead of erroring loudly. reconfigure()
+# is Python 3.7+; guarded because it's absent when stdout is replaced by a non-TextIOWrapper
+# (e.g. under some test runners).
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8")
+
+ENGINE_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(ENGINE_DIR)
+
+DEFAULT_CONFIG = {
+    "person": {
+        "name": "",
+        "file_prefix": "CV",
+        "letter_prefix": None,  # None -> "CoverLetter_" + file_prefix
+    },
+    "render": {
+        "default_photo": None,  # None -> --photo required on the CLI
+        "default_style": "a",
+        "browser_bin": None,  # None -> auto-detect
+    },
+    "spine": {
+        "locked_order": [],
+        "title_markers": {},
+        "optional_ids": [],
+        "verbatim_ids": [],
+        "education": {"required_titles": [], "require_detail_for": []},
+        "heading_aliases": {},
+    },
+    "limits": {"soft_line_budget": 57, "max_pages": 1},
+    "display_names": {},
+    "pipelines": {
+        "minimal": {
+            "master": "master/master_cv_minimal.md",
+            "template": "minimal-full",
+            "out": "cv-minimal.md",
+        },
+        "full": {
+            "master": "master/master_cv.md",
+            "template": "full",
+            "out": "cv.md",
+        },
+    },
+}
+
+
+def _deep_merge(base, override):
+    result = dict(base)
+    for key, value in override.items():
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            result[key] = _deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
+class Config:
+    """Resolved root + loaded config.json, as attribute access over nested dicts."""
+
+    def __init__(self, root, data):
+        self.root = root
+        self._data = data
+
+    def get(self, dotted_path, default=None):
+        node = self._data
+        for part in dotted_path.split("."):
+            if not isinstance(node, dict) or part not in node:
+                return default
+            node = node[part]
+        return node
+
+    @property
+    def person_name(self):
+        return self.get("person.name", "")
+
+    @property
+    def file_prefix(self):
+        return self.get("person.file_prefix", "CV")
+
+    @property
+    def letter_prefix(self):
+        return self.get("person.letter_prefix") or f"CoverLetter_{self.file_prefix}"
+
+    @property
+    def default_photo(self):
+        photo = self.get("render.default_photo")
+        return os.path.join(self.root, photo) if photo else None
+
+    @property
+    def default_style(self):
+        return self.get("render.default_style", "a")
+
+    @property
+    def browser_bin(self):
+        return self.get("render.browser_bin")
+
+    @property
+    def display_names(self):
+        return self.get("display_names", {})
+
+    @property
+    def locked_order(self):
+        return self.get("spine.locked_order", [])
+
+    @property
+    def title_markers(self):
+        return self.get("spine.title_markers", {})
+
+    @property
+    def optional_ids(self):
+        return self.get("spine.optional_ids", [])
+
+    @property
+    def verbatim_ids(self):
+        return self.get("spine.verbatim_ids", [])
+
+    @property
+    def education_required_titles(self):
+        return self.get("spine.education.required_titles", [])
+
+    @property
+    def education_require_detail_for(self):
+        return self.get("spine.education.require_detail_for", [])
+
+    @property
+    def heading_aliases_extra(self):
+        return self.get("spine.heading_aliases", {})
+
+    @property
+    def spine_configured(self):
+        """False for a fresh clone with no spine set up yet — check_cv.py uses this to print a
+        NOT CONFIGURED banner instead of a misleading "all OK" that isn't actually checking
+        anything."""
+        return bool(self.locked_order or self.education_required_titles or self.verbatim_ids)
+
+    @property
+    def soft_line_budget(self):
+        return self.get("limits.soft_line_budget", 57)
+
+    @property
+    def max_pages(self):
+        return self.get("limits.max_pages", 1)
+
+    # -- paths, all relative to root --
+    @property
+    def master_dir(self):
+        return os.path.join(self.root, "master")
+
+    @property
+    def pipelines(self):
+        """The "pipelines" config block: {name: {"master": ..., "template": ..., "out": ...}},
+        each value still relative to root — see pipeline() for the resolved (absolute-master)
+        form callers actually want."""
+        return self.get("pipelines", {})
+
+    def pipeline(self, name):
+        """Resolved pipeline info for e.g. "minimal" or "full": {"master": <abs path>,
+        "template": <name, no .md>, "out": <filename>}. Raises KeyError for an unknown pipeline
+        name — every caller passes a name it already knows is valid (a CLI --pipeline choice, or
+        one of build_cv's own front-matter-parsed selections)."""
+        p = self.pipelines.get(name)
+        if p is None:
+            raise KeyError(
+                f"unknown pipeline: {name!r} (check config.json's \"pipelines\" block)"
+            )
+        return {
+            "master": os.path.join(self.root, p["master"]),
+            "template": p["template"],
+            "out": p["out"],
+        }
+
+    @property
+    def master_path(self):
+        """The minimal pipeline's master — kept as its own property since most callers only
+        ever care about this one; equivalent to pipeline("minimal")["master"]."""
+        return self.pipeline("minimal")["master"]
+
+    @property
+    def master_full_path(self):
+        """The full pipeline's master; equivalent to pipeline("full")["master"]."""
+        return self.pipeline("full")["master"]
+
+    @property
+    def templates_dir(self):
+        return os.path.join(self.root, "templates")
+
+    @property
+    def offer_pages_dir(self):
+        return os.path.join(self.root, "applications", "offer-pages")
+
+    @property
+    def produced_dir(self):
+        return os.path.join(self.root, "produced")
+
+
+def find_root(explicit_root=None):
+    if explicit_root:
+        return os.path.abspath(explicit_root)
+
+    env_root = os.environ.get("JOBHUNTKIT_ROOT")
+    if env_root:
+        return os.path.abspath(env_root)
+
+    probe = os.path.abspath(os.getcwd())
+    while True:
+        if os.path.isfile(os.path.join(probe, "config.json")):
+            return probe
+        parent = os.path.dirname(probe)
+        if parent == probe:
+            break
+        probe = parent
+
+    return REPO_ROOT
+
+
+def load_config(root):
+    config_path = os.path.join(root, "config.json")
+    data = DEFAULT_CONFIG
+    if os.path.isfile(config_path):
+        with open(config_path, "r", encoding="utf-8") as f:
+            user_data = json.load(f)
+        data = _deep_merge(DEFAULT_CONFIG, user_data)
+    return Config(root, data)
+
+
+def resolve(explicit_root=None):
+    """One-call convenience: find the root, load its config.json (or defaults), return a Config."""
+    root = find_root(explicit_root)
+    return load_config(root)
+
+
+def add_root_arg(parser):
+    """Adds --root to an argparse.ArgumentParser. Call before parser.parse_args()."""
+    parser.add_argument(
+        "--root",
+        default=None,
+        help="data root directory (default: $JOBHUNTKIT_ROOT, or walk up from cwd for "
+        "config.json, or this repo checkout)",
+    )
+    return parser
+
+
+def root_parent_parser():
+    """A parent parser carrying just --root, for scripts that want `parents=[...]`."""
+    parent = argparse.ArgumentParser(add_help=False)
+    add_root_arg(parent)
+    return parent

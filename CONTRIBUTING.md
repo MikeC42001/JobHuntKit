@@ -1,0 +1,87 @@
+# Contributing
+
+Thanks for considering it. JobHuntKit is a small, opinionated toolkit — most contributions worth
+making fall into a few buckets: extending the engine (a new posting extractor, a renderer fix),
+improving the docs a stranger's first run depends on, or adding a new CV visual style for the
+rendered PDF.
+
+## The one rule that matters: never commit real CV data
+
+`engine/` is upstream-owned tooling and should never contain a real name, email, phone number,
+employer, or any other personal content — that's not a style preference, it's what
+`scripts/audit_public.py` (the leak gate) actively enforces in CI and in a pre-commit hook. If
+you're testing a change against your own CV data, keep that data at a `--root` outside your
+clone, or in the gitignored default-root paths (`config.json`, `master/`, `profile/`,
+`applications/`, `produced/`, `images/`, `workspace/`, rendered output under any
+`generate-pdfs/`, and your own `.private-terms` wordlist — see `.gitignore` for the full list),
+never staged into a commit.
+
+Install the pre-commit hook once per clone (git doesn't track `.git/hooks/`, so this is a manual
+step):
+
+```bash
+bash scripts/install_hooks.sh
+```
+
+It runs `audit_public.py` against your staged files before every commit and refuses to let one
+through on any finding — an unexpected binary, an email/phone outside the small allowlist, an
+absolute path, or a term from your own gitignored `.private-terms` wordlist (copy
+`.private-terms.example` and fill in anything specific to you: your name, employer, an
+unreleased product name).
+
+## Before you open a PR
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest tests/ -v                                   # full suite
+ruff check engine scripts tests .github                       # lint — same command CI runs
+shellcheck -x engine/*.sh scripts/*.sh community/*.sh          # shell lint — CI runs this too
+node --check engine/render-support/*.js                        # JS syntax check — same as CI
+bash demo.sh                                                   # the actual end-to-end smoke test
+python scripts/audit_public.py                                 # leak gate, same check the pre-commit hook runs
+```
+
+CI (`.github/workflows/ci.yml`) runs three jobs, all of which need to be green before a PR
+merges: `lint` (`ruff`, the leak gate for real — not just the local pre-commit hook — and
+`shellcheck -x` on every tracked `.sh` file), `test` (the pytest suite on ubuntu/macos/windows),
+and `render-matrix` (`node --check` on every JS converter, then `demo.sh` for real on ubuntu and
+macOS).
+
+## The engine/content seam
+
+If you're not familiar with the split yet: `engine/` (this toolkit's code) never contains
+personal data; everyone's own CV content lives at a "root" resolved at runtime
+(`--root`/`$JOBHUNTKIT_ROOT`/the checkout itself by default — see `engine/config.py`). Keep that
+boundary in mind for any change — a new script should take `--root` via
+`config.root_parent_parser()` like every existing one does, not hardcode a path.
+
+## Proposing something new
+
+Got an idea rather than a finished PR? Just open an issue — that's the normal path, and every
+open issue is a `question`-labelled one until it's been scoped into approved work (see
+[`community/README.md`](community/README.md) for the full lifecycle: question → reactions/
+comments while it's genuinely undecided → promoted to scoped work). `bash community/community.sh status` reads the current state of all three stages back from GitHub at any time.
+`community/OPEN_QUESTIONS.md` is the maintainer's own pre-issue queue for ideas not yet ready to
+post — it's not where you file something as a contributor, just background if you're curious what's
+being weighed.
+
+## What's a good first contribution
+
+- A posting extractor for a job board not yet supported — `engine/extractors/` is in, with
+  `linkedin`/`plaintext`/`generic` shipped. Greenhouse, Lever, Workday, and Indeed are open
+  questions rather than filed issues right now (see `community/OPEN_QUESTIONS.md`'s Q-003) —
+  comment there or open a `question`-labelled issue yourself if you'd build one. See
+  `docs/EXTRACTORS.md` for the how-to; small, self-contained, ships with its own synthetic
+  fixture.
+- A renderer or cross-platform fix — `engine/lib.sh` is the shared cross-platform layer; a bug
+  report with the exact OS/browser combination is just as valuable as a fix.
+- A new CV visual style — `docs/CUSTOMIZING.md` has the full A-to-Z recipe (five touchpoints,
+  one real trap around the dispatch chain's fallthrough).
+- A docs fix. `docs/GETTING-STARTED.md` is meant to work for a stranger with zero context; if a
+  step assumed something the docs didn't explain, that's a real bug.
+
+## License
+
+MIT (`LICENSE`). By contributing, you agree your contribution is licensed under the same terms.
+Bundled IBM Plex fonts are SIL OFL 1.1 (`NOTICE` + `engine/render-support/fonts/OFL.txt`) — don't
+add new font files without checking their license is compatible and adding a NOTICE entry.

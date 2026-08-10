@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# pre-commit — runs the leak gate before every commit. Installed via scripts/install_hooks.sh
+# (git doesn't track .git/hooks/, so this file is the source of truth and that script is the
+# installer). Scoped to staged files only, so it stays fast and only blocks what this commit is
+# actually about to introduce.
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+mapfile -t STAGED < <(git diff --cached --name-only --diff-filter=ACM)
+if [ "${#STAGED[@]}" -eq 0 ]; then
+  exit 0
+fi
+
+ABS_STAGED=()
+for f in "${STAGED[@]}"; do
+  ABS_STAGED+=("$REPO_ROOT/$f")
+done
+
+python3 "$REPO_ROOT/scripts/audit_public.py" --root "$REPO_ROOT" "${ABS_STAGED[@]}"
