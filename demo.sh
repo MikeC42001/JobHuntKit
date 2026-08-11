@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # demo.sh — the 60-second demo. Builds and renders the fictional "Robin Vale" persona in
 # examples/demo/, using the exact same scripts a real user would run on their own data (just
-# pointed at a different --root). Requires only Python 3.8+, node, and a Chromium-family browser.
+# pointed at a different --root). Requires only Python 3.8+, Node.js 22+, and a Chromium-family
+# browser.
 
 set -euo pipefail
 

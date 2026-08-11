@@ -1,7 +1,8 @@
 # Installing the prerequisites
 
-JobHuntKit needs three things: **Python 3.8+**, **Node.js**, and **a Chromium-family browser**.
-Nothing else, and nothing from `pip`.
+JobHuntKit needs three things: **Python 3.8+**, **Node.js 22+** (20.19+ also works — see
+[Why Node 22](#why-node-22)), and **a Chromium-family browser**. Nothing else, and nothing from
+`pip`.
 
 The README has the short copy-paste version. This page is for when that doesn't just work — which
 on Windows, it sometimes doesn't, for reasons that are worth knowing about.
@@ -49,7 +50,7 @@ have it, and it can be blocked by policy — use the downloads below.
 |---|---|
 | Git (includes Git Bash) | https://git-scm.com/download/win |
 | Python | https://www.python.org/downloads/windows/ |
-| Node.js (LTS) | https://nodejs.org |
+| Node.js — take the **LTS** build (22 or newer) | https://nodejs.org |
 | Browser | Edge is already installed. Nothing to do. |
 
 **In the Python installer, tick "Add python.exe to PATH" on the first screen.** It is off by
@@ -106,12 +107,48 @@ headless Chromium via `--print-to-pdf`, which is not something Safari offers.
 ## Linux (Debian/Ubuntu)
 
 ```bash
-sudo apt update && sudo apt install -y git python3 nodejs npm chromium-browser
+sudo apt update && sudo apt install -y git python3 chromium-browser
 ```
 
-On other distributions the package names differ (`chromium`, `google-chrome-stable`), but the
-three requirements are the same. If `apt`'s Node.js is too old for `marked`, use
-[nodesource](https://github.com/nodesource/distributions) or `nvm`.
+**Do not install Node from `apt`.** This is not a "if it's too old" caveat — it *is* too old on
+every current release: Ubuntu 24.04 LTS and Debian 12 both ship Node 18, Ubuntu 22.04 ships
+Node 12. All of them fail at the first render with `ERR_REQUIRE_ESM`, and the error comes from
+inside a converter, so it doesn't look like a Node version problem.
+
+Use [nodesource](https://github.com/nodesource/distributions):
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
+```
+
+Or [nvm](https://github.com/nvm-sh/nvm), which needs no root:
+
+```bash
+nvm install 22
+nvm use 22
+```
+
+On other distributions the package names differ (`chromium`, `google-chrome-stable`), and some
+ship a current Node — check with `node --version`, or just run `bash scripts/preflight.sh`, which
+answers the question directly.
+
+## Why Node 22
+
+The renderers convert markdown to HTML with [`marked`](https://github.com/markedjs/marked). Recent
+`marked` is **ESM-only** — its `exports` map has no `require` condition — while the converters are
+CommonJS and load it with `require("marked")`. That combination needs Node's support for
+`require()`-ing an ES module, which arrived in **20.19** and **22.12**, and was never in **21.x**
+or **22.0–22.11**.
+
+So the floor isn't a simple "20 or newer", which is why nothing here compares version numbers:
+`preflight.sh` writes a two-line ES module to a temp directory and tries to `require` it. If that
+works, the renderers will work. It's the same reasoning as the Python check — ask the machine what
+it can do, don't infer it from a version string.
+
+Nothing else in this project needs anything modern; the converters themselves parse fine on much
+older Node. If you ever need to run on an older one, pinning `marked` to a release that still
+shipped a CommonJS build is the lever — `engine/render-support/package.json`.
 
 ---
 
@@ -130,6 +167,14 @@ preflight: all good — run 'bash demo.sh'.
 One line per requirement. Anything missing is printed as `MISSING`, with what to install, and the
 script exits non-zero. `demo.sh` runs it first in quiet mode, so a missing requirement is a
 checklist rather than a stack trace three steps into a render.
+
+The Node line checks that Node can actually load the renderer, not merely that `node` exists — a
+too-old Node looks like this, and stops the run before anything else happens:
+
+```
+  MISSING node   v20.12.2 is too old — cannot require() an ES module
+preflight: this Node is too old to load the markdown renderer.
+```
 
 If it reports Python at a full path rather than a bare name, it found one that isn't on your PATH.
 That works, but only because the scripts search for it — see above for making it permanent.

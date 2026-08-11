@@ -5,7 +5,7 @@ see the mechanism work first, `bash demo.sh` runs the whole pipeline on a fictio
 about a minute — no setup required, and a good way to sanity-check your machine before touching
 your own data.
 
-Before any of it: you need Python 3.8+, Node.js, and a Chromium-family browser, and on Windows
+Before any of it: you need Python 3.8+, Node.js 22+, and a Chromium-family browser, and on Windows
 you need to be in Git Bash. `bash scripts/preflight.sh` tells you where you stand;
 [INSTALL.md](INSTALL.md) covers getting there per platform.
 

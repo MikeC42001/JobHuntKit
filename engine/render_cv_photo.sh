@@ -20,7 +20,7 @@
 # filename from render_cv.sh's cv.pdf, so both can exist side by side per application. Strips
 # any lines starting with "> " (internal tailoring notes) before rendering, same as render_cv.sh.
 #
-# Requires: node/npm on PATH, and a Chromium-family browser installed (Chrome, Edge, Chromium,
+# Requires: Node.js 22+ (20.19+ works) and npm on PATH, and a Chromium-family browser (Chrome, Edge, Chromium,
 # or Brave — see lib.sh's find_browser for the search order, or set BROWSER_BIN to override).
 
 set -euo pipefail

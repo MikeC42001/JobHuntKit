@@ -151,6 +151,53 @@ def test_python_bin_env_var_that_does_not_work_is_an_error_not_a_fallback(tmp_pa
 
 
 # ---------------------------------------------------------------------------
+# node_supports_require_esm — the other capability probe in lib.sh
+# ---------------------------------------------------------------------------
+
+def _node_available():
+    return shutil.which("node") is not None
+
+
+@pytest.mark.skipif(not _node_available(), reason="no node on PATH")
+def test_node_probe_agrees_with_actually_requiring_an_esm_package():
+    """The probe writes a two-line ES module and requires it. Its answer has to match what the
+    converters will really experience, so this asserts the two agree rather than asserting a
+    version number — the whole point of probing is that the version rule has holes (21.x and
+    22.0-22.11 lack require(esm) despite being newer than 20.19)."""
+    probe = subprocess.run(
+        [bash_executable(), "-c", f'source "{LIB_SH}"; node_supports_require_esm'],
+        capture_output=True, text=True, check=False,
+    )
+
+    marked_dir = os.path.join(REPO_ROOT, "engine", "render-support")
+    if not os.path.isdir(os.path.join(marked_dir, "node_modules", "marked")):
+        pytest.skip("marked not installed yet — nothing to cross-check the probe against")
+
+    real = subprocess.run(
+        ["node", "-e", 'require("marked")'],
+        capture_output=True, text=True, cwd=marked_dir, check=False,
+    )
+    assert (probe.returncode == 0) == (real.returncode == 0), (
+        f"probe said {probe.returncode == 0}, requiring marked said {real.returncode == 0}: "
+        f"{real.stderr.strip()[:200]}"
+    )
+
+
+@pytest.mark.skipif(not _node_available(), reason="no node on PATH")
+def test_preflight_passes_on_a_machine_that_can_run_the_suite():
+    """CI and any dev machine able to run the renderers must come back clean — a preflight that
+    fails where the pipeline works would be worse than none."""
+    result = subprocess.run(
+        [bash_executable(), os.path.join(REPO_ROOT, "scripts", "preflight.sh")],
+        capture_output=True, text=True, check=False,
+    )
+    if "MISSING browser" in result.stderr:
+        pytest.skip("no browser on this machine — not what this test is about")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "python" in result.stdout and "node" in result.stdout
+
+
+# ---------------------------------------------------------------------------
 # Regression guard on the callers
 # ---------------------------------------------------------------------------
 

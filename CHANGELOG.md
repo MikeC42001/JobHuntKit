@@ -17,6 +17,15 @@ All notable changes to this project are documented here. Format follows
   is never selected. `PYTHON_BIN` overrides, matching `BROWSER_BIN`.
 - `config_get()` no longer aborts under `set -u` when `ROOT` is unset; an absent root now means
   "no config", which is what a caller with no data root (such as `preflight.sh`) needs.
+- **The Node requirement is now stated, and checked.** It was "any recent version", which was not
+  true: `marked` is ESM-only and the converters `require()` it, so Node has to support
+  `require(esm)` — **20.19+ or 22.12+**, and notably not 21.x or 22.0–22.11. `preflight.sh` had
+  been checking only that `node` existed, so it reported all-clear on machines that then failed at
+  the first render; it now probes the capability itself. `ensure_marked_installed()` carries the
+  same guard, since a renderer can be run directly.
+- **The Debian/Ubuntu install instructions no longer use `apt`'s `nodejs`.** It is Node 18 on
+  Ubuntu 24.04 LTS and Debian 12, and Node 12 on Ubuntu 22.04 — every current LTS ships one too
+  old to load the renderer. README and `docs/INSTALL.md` now use nodesource or `nvm`.
 
 ### Added
 

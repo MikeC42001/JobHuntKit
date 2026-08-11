@@ -185,8 +185,43 @@ browser_flags() {
   printf '%s' "$flags"
 }
 
+# node_supports_require_esm — can this Node `require()` an ES module?
+#
+# The converters are CommonJS and do `require("marked")`, but marked ships ESM-only: its exports
+# map has no "require" condition at all. So the real Node floor isn't marked's declared
+# `engines: >= 20`, it's whether Node can require ESM — unflagged in 20.19+, 22.12+, and 23+, but
+# NOT in 21.x or 22.0–22.11. Too many holes to express as a `>=` comparison.
+#
+# So don't compare versions: run the thing. Same reasoning as python_bin() above — a capability
+# probe stays correct as Node changes, a version table starts rotting the day it's written.
+# Relative require on purpose: an absolute POSIX path baked into the file would not resolve for
+# a native node.exe under Git Bash.
+node_supports_require_esm() {
+  local tmp rc=0
+  tmp="$(mktemp -d)" || return 1
+  printf 'export const ok = 1;\n' > "$tmp/probe.mjs"
+  printf 'require("./probe.mjs");\n' > "$tmp/probe.cjs"
+  ( cd "$tmp" && node probe.cjs ) >/dev/null 2>&1 || rc=1
+  rm -rf "$tmp"
+  return "$rc"
+}
+
+no_node_esm_error() {
+  echo "$1: this Node is too old to load the markdown renderer." >&2
+  echo "  Node $(node --version 2>/dev/null || echo '(unknown)') cannot require() an ES module," >&2
+  echo "  which is how the converters load 'marked'. Install Node 22 LTS or newer." >&2
+  echo "  (20.19+ and 22.12+ also work; 21.x and 22.0-22.11 do not.)" >&2
+  echo "  See docs/INSTALL.md — on Debian/Ubuntu the apt package is too old on every current LTS." >&2
+}
+
 ensure_marked_installed() {
   local support_dir="$1"
+  # Checked here rather than only in preflight.sh: a renderer can be run directly, and the failure
+  # it would otherwise produce is a bare ERR_REQUIRE_ESM from inside a converter.
+  if ! node_supports_require_esm; then
+    no_node_esm_error "lib"
+    return 1
+  fi
   mkdir -p "$support_dir"
   if [ ! -d "$support_dir/node_modules/marked" ]; then
     ( cd "$support_dir" && npm install >/dev/null 2>&1 )

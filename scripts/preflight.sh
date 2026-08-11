@@ -2,7 +2,7 @@
 # preflight.sh — answers "will this work on this machine?" before you find out the hard way at
 # step 3 of 10, halfway through a render.
 #
-# Checks the three hard requirements (Python 3.8+, Node.js, a Chromium-family browser) and prints
+# Checks the three hard requirements (Python 3.8+, Node.js 22+, a Chromium-family browser) and prints
 # a concrete fix for each one that's missing, rather than leaving you with `python3: command not
 # found` and a search engine.
 #
@@ -56,12 +56,23 @@ fi
 # --- Node ----------------------------------------------------------------------------------
 # The renderers use node for markdown->HTML (marked, installed on first render) and for reading
 # config.json, so it's a hard requirement even though nothing here is a Node project.
+#
+# Two checks, not one. "node exists" was the original check and it greenlit machines that then
+# failed at the first render: marked is ESM-only and the converters require() it, so a Node
+# without require(esm) passes a presence check and dies later. Reporting all-clear on a box that
+# can't render is the failure mode this script exists to remove.
 if command -v node >/dev/null 2>&1 && node --version >/dev/null 2>&1; then
-  ok "node" "$(node --version) — $(command -v node)"
+  if node_supports_require_esm; then
+    ok "node" "$(node --version) — $(command -v node)"
+  else
+    bad "node" "$(node --version) is too old — cannot require() an ES module"
+    no_node_esm_error "preflight"
+  fi
 else
   bad "node" "no Node.js found"
-  echo "  Install from https://nodejs.org (LTS), or: winget install OpenJS.NodeJS.LTS" >&2
-  echo "  macOS: brew install node   ·   Debian/Ubuntu: sudo apt install nodejs npm" >&2
+  echo "  Install Node 22 LTS or newer: https://nodejs.org" >&2
+  echo "  Windows: winget install OpenJS.NodeJS.LTS   ·   macOS: brew install node" >&2
+  echo "  Debian/Ubuntu: the apt package is too old on every current LTS — see docs/INSTALL.md" >&2
 fi
 
 # --- Browser -------------------------------------------------------------------------------

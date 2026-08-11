@@ -8,9 +8,10 @@ a tagged master CV + a per-posting selection file.
 2026-08-04 and opened once M0–M4 were done and `v0.1.0` was tagged)
 **Public identity:** in any tracked file, refer to the maintainer only as `MikeC42001` — never a
 first name, full name, or initials. `LICENSE`'s copyright line included.
-**Stack:** Python 3.8+ (stdlib only), Node.js (`marked` for markdown→HTML), Bash renderers →
-headless Chrome/Chromium/Edge/Brave `--print-to-pdf`. No build system, no pip dependencies for
-the engine itself.
+**Stack:** Python 3.8+ (stdlib only), Node.js 22+ (`marked` for markdown→HTML; it's ESM-only and
+the converters `require()` it, so the floor is Node's `require(esm)` support — 20.19+/22.12+, not
+21.x or 22.0–22.11), Bash renderers → headless Chrome/Chromium/Edge/Brave `--print-to-pdf`. No
+build system, no pip dependencies for the engine itself.
 
 **License:** MIT (`LICENSE`). Bundled IBM Plex fonts are SIL OFL 1.1 (`NOTICE` +
 `engine/render-support/fonts/OFL.txt`).
@@ -52,8 +53,8 @@ Milestones M0–M4 are all complete and merged. What works, end to end:
 
 - `bash demo.sh` runs the whole pipeline against the fictional `examples/demo/` persona —
   build → validate → render → verify → one-page PDF, plus the full CV, the photo variant, and a
-  cover letter. CI runs it for real on Linux and macOS, so "cross-platform" is verified rather
-  than assumed.
+  cover letter. CI runs it for real on Linux, macOS and Windows, so "cross-platform" is verified
+  rather than assumed.
 - **Two pipelines from one `application.md`**: the tailored one-pager (`cv-minimal.md`) and the
   long-form full CV (`cv.md`), opted into per company via a `pipelines:` front-matter key.
 - **Two masters**: `master/master_cv.md` is the complete inventory; `master_cv_minimal.md` is its

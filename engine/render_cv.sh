@@ -17,7 +17,7 @@
 #
 # No --photo, no --style — for a photo/two-column layout use render_cv_photo.sh instead.
 #
-# Requires: node/npm on PATH, and a Chromium-family browser installed (Chrome, Edge, Chromium,
+# Requires: Node.js 22+ (20.19+ works) and npm on PATH, and a Chromium-family browser (Chrome, Edge, Chromium,
 # or Brave — see lib.sh's find_browser for the search order, or set BROWSER_BIN to override).
 
 set -euo pipefail

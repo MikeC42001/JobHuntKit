@@ -32,7 +32,7 @@ Three things, none of them a package this project publishes:
 | | | |
 |---|---|---|
 | **Python 3.8+** | stdlib only | no `pip install` for the engine itself |
-| **Node.js** | any recent version | the renderer installs its one dependency, `marked`, on first run |
+| **Node.js 22+** | 20.19+ also works | the renderer installs its one dependency, `marked`, on first run. `marked` is ESM-only and the converters `require()` it, so Node has to support `require(esm)` — which rules out 21.x and 22.0–22.11 as well as everything older ([why](docs/INSTALL.md#why-node-22)) |
 | **A Chromium-family browser** | Chrome, Edge, Chromium or Brave | auto-detected; override with `BROWSER_BIN=/path/to/browser` or `render.browser_bin` in `config.json` |
 
 **On Windows, run everything from Git Bash** (it comes with Git for Windows). The renderers are
@@ -68,7 +68,11 @@ brew install git python node
 **Linux (Debian/Ubuntu)**
 
 ```bash
-sudo apt update && sudo apt install -y git python3 nodejs npm chromium-browser
+sudo apt update && sudo apt install -y git python3 chromium-browser
+
+# NOT apt's nodejs — it's 18.x on Ubuntu 24.04 and Debian 12, too old to load the renderer.
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
 ```
 
 **Then check it, on any platform:**
@@ -229,7 +233,7 @@ drift. Running the pipeline with no agent at all: [docs/NO-AI.md](docs/NO-AI.md)
 | Script | Does |
 |---|---|
 | `demo.sh` | Runs the whole pipeline end to end against `examples/demo/` — the 60-second demo above |
-| `scripts/preflight.sh` | Checks this machine has Python 3.8+, Node.js, and a browser, and says what to install if not — run it first, or let `demo.sh` run it for you |
+| `scripts/preflight.sh` | Checks this machine has Python 3.8+, a Node that can load the renderer, and a browser, and says what to install if not — run it first, or let `demo.sh` run it for you |
 | `scripts/init_workspace.py` | Scaffolds a fresh data root from `templates/` — config.json, master/, profile/, applications/, templates/, images/, produced/ |
 | `scripts/make_avatar.py` | One-off helper: draws a simple initials-in-a-circle placeholder avatar PNG, for anyone who wants a photo without a stock image or licensing question. Requires Pillow (`pip install pillow`), a dev-only dependency — not part of the render pipeline |
 | `scripts/audit_public.py` | The leak gate — refuses to `sync.sh push` (and fails CI's `lint` job) if personal data, an unexpected binary, or an absolute path would leave the engine |
