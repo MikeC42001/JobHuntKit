@@ -6,7 +6,32 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- **`demo.sh` and `scripts/sync.sh` no longer hardcode `python3`**, which is not a command that
+  exists on a stock Windows install — the python.org installer provides `python` and `py`, and the
+  `python3` usually found on PATH is Windows' App Execution Alias, a stub that opens the Microsoft
+  Store instead of running Python. `python_bin()` in `engine/lib.sh` tries `python3`, `python`,
+  `py` and the common install locations, accepting one only if it actually executes and reports
+  Python 3.8+ — so a Python installed without "Add python.exe to PATH" is still found, and a stub
+  is never selected. `PYTHON_BIN` overrides, matching `BROWSER_BIN`.
+- `config_get()` no longer aborts under `set -u` when `ROOT` is unset; an absent root now means
+  "no config", which is what a caller with no data root (such as `preflight.sh`) needs.
+
 ### Added
+
+- **`scripts/preflight.sh`** — checks Python, Node.js and a browser, prints a concrete fix for
+  anything missing, and exits non-zero. `demo.sh` runs it first, so a missing requirement is a
+  checklist up front rather than a failure three steps into a render.
+- **`docs/INSTALL.md`** — per-OS installation, the Windows Store-alias and PATH traps, and how to
+  point `PYTHON_BIN`/`BROWSER_BIN` at something manually.
+- CI's `render-matrix` job runs `demo.sh` end to end on `windows-latest` as well as Linux and
+  macOS. The Windows render path had never executed in CI before.
+
+### Changed
+
+- `README.md` leads with Requirements and a per-OS copy-paste install block, before the demo
+  command that needs them; "Set it up" puts the by-hand path first, the agent prompt second.
 
 - `scripts/audit_public.py` now reports untracked, non-ignored files that its default run did
   **not** check, and takes `--include-untracked` to audit them as well. The audited set is every

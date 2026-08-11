@@ -147,10 +147,7 @@ Every renderer is a Bash script, and the README's answer for Windows is one line
 Bash. That is honest but untested as a boundary — **nobody has established what actually happens
 on a stock Windows 10 machine with only `cmd` and PowerShell.**
 
-CI does not cover it either, and it looks like it might: the `test` matrix includes
-`windows-latest`, but that job runs pytest only. The `render-matrix` job — the one that runs the
-real `demo.sh` end to end — is ubuntu and macOS. So the Windows render path has never executed
-in CI, on any commit.
+~~CI does not cover it either~~ — it does now; see the update below.
 
 Three directions, in increasing cost:
 
@@ -161,9 +158,32 @@ Three directions, in increasing cost:
 3. **Move rendering into Python**, which is already a hard dependency, and drop Bash from the
    critical path entirely. Biggest change, and the one that actually removes the question.
 
-What would settle it: someone running a fresh clone on a Windows 10 box with no Git Bash
-installed and recording where it breaks first. Until that exists, the honest position is that the
-Windows story is "install Git Bash", and the docs should not imply more than that.
+#### Update — a first run on Windows, finally
+
+Someone ran a fresh clone on a Windows 11 machine, in Git Bash, and it broke immediately: `bash
+demo.sh` died at step 1 of 10 because the script invoked `python3`, which is not a command that
+exists on a stock Windows install. The python.org installer provides `python` and `py`; the
+`python3` that *is* normally on PATH is Windows' App Execution Alias, a stub that advertises the
+Microsoft Store and exits non-zero. Python had also been installed without "Add python.exe to
+PATH" ticked, which is a separate and equally common trap.
+
+Three things came out of it:
+
+- **Direction 1 has been taken.** Git Bash is now stated as a requirement in the README rather
+  than mentioned in passing, `docs/INSTALL.md` covers it per platform, and
+  `scripts/preflight.sh` reports what's missing before anything runs.
+- **The interpreter is resolved rather than named** (`python_bin()` in `engine/lib.sh`): it tries
+  `python3`, `python`, `py` and the usual install locations, and accepts a candidate only if it
+  actually executes and reports Python 3.8+. So the Store stub is skipped rather than picked.
+- **`render-matrix` now includes `windows-latest`**, so the Bash render path executes in CI on
+  Windows. Worth being precise: that job would *not* have caught this bug, because
+  `actions/setup-python` provides `python3` on a Windows runner. `tests/test_python_bin.py`
+  guards the interpreter name; the CI job guards the renderers.
+
+**Why this stays open.** All of the above is about Windows *with* Git Bash. The question as asked
+is about a machine that has none — and nobody has run that. What would still settle it: a fresh
+clone on Windows with only `cmd` and PowerShell, recording where it breaks and whether the failure
+is legible enough to act on.
 
 ### Q-009 — Should the colour palette be settable without editing engine files?
 
