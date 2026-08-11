@@ -25,11 +25,16 @@ Checks (all hard failures — this is a gate, not a linter):
   7. No term from `.private-terms` (gitignored, never committed — read if present, silently
      empty otherwise so CI's run is deterministic without needing the real wordlist).
 
+Plus one thing that is *not* a failure: with no explicit paths, the audited set is every
+git-tracked file, which is not the same as everything present in the directory. Untracked files
+are reported in a warning line so a clean result can't be read as coverage it doesn't have.
+
 Usage:
     python3 scripts/audit_public.py                    # audit every git-tracked file in --root
     python3 scripts/audit_public.py path1.py path2.md   # audit exactly these files
     python3 scripts/audit_public.py --root <dir>
     python3 scripts/audit_public.py --terms-file <path> # override .private-terms location
+    python3 scripts/audit_public.py --include-untracked  # audit untracked, non-ignored files too
 
 Exit code 0 if clean, 1 if any finding — safe to use as a real gate.
 """
@@ -98,6 +103,10 @@ ABS_PATH_ALLOWLIST_PREFIXES = ["C:\\Program Files\\Git\\"]
 CONTENT_CHECK_SELF_EXCLUDE = {"scripts/audit_public.py", "tests/test_audit_public.py"}
 
 TEXT_READ_ERRORS = (UnicodeDecodeError,)
+
+# How many untracked paths the warning lists before summarising the rest. Enough to name the
+# handful that matters, short enough not to bury the report above it.
+UNTRACKED_WARN_LIMIT = 10
 
 
 class Finding:
@@ -231,12 +240,53 @@ def git_tracked_files(root):
     return [os.path.join(root, p) for p in out.stdout.splitlines() if p.strip()]
 
 
+def git_untracked_files(root):
+    """Untracked, non-ignored files — what `git ls-files`, and therefore this gate, cannot see.
+
+    `--exclude-standard` is load-bearing: without it this lists every gitignored artifact
+    (produced/, a stray generate-pdfs/ run, __pycache__), the warning below cries wolf on every
+    run, and a warning nobody reads is worth less than no warning at all.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "-C", root, "ls-files", "--others", "--exclude-standard"],
+            capture_output=True, text=True, check=True,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+    return [os.path.join(root, p) for p in out.stdout.splitlines() if p.strip()]
+
+
+def warn_untracked(root, untracked):
+    """Say out loud what wasn't looked at. Deliberately not a finding.
+
+    A clean report is a statement about the *tracked* set, not about the directory — and it reads
+    as reassurance either way. That's how two new social-card PNGs, and later a screenshot, each
+    sat unexamined next to a passing gate. It stays a warning rather than a failure because an
+    untracked file isn't part of the commit or push this gate is protecting, and failing on
+    scratch files is how a gate gets routed around.
+    """
+    if not untracked:
+        return
+    rels = [os.path.relpath(p, root).replace(os.sep, "/") for p in untracked]
+    print(f"audit_public: WARNING — {len(rels)} untracked, non-ignored file(s) were NOT checked:")
+    for rel in rels[:UNTRACKED_WARN_LIMIT]:
+        print(f"    {rel}")
+    if len(rels) > UNTRACKED_WARN_LIMIT:
+        print(f"    … and {len(rels) - UNTRACKED_WARN_LIMIT} more")
+    print("  Only git-tracked files are audited. Re-run with --include-untracked")
+    print("  to scan them, or stage them first.")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("paths", nargs="*", help="specific files to audit (default: every git-tracked file)")
     parser.add_argument("--root", default=REPO_ROOT, help="repo root (default: this script's repo)")
     parser.add_argument("--terms-file", default=None,
                          help="private-terms wordlist path (default: <root>/.private-terms if present)")
+    parser.add_argument("--include-untracked", action="store_true",
+                         help="also audit untracked, non-ignored files (default: warn that they were "
+                              "skipped). Ignored when explicit paths are given — those are the scope.")
     args = parser.parse_args()
 
     root = os.path.abspath(args.root)
@@ -245,6 +295,10 @@ def main():
 
     manifest_findings = check_manifest_self(os.path.join(root, "engine.manifest"))
 
+    # Files present but invisible to the audited set. Explicit paths are the caller's own chosen
+    # scope (the pre-commit hook's staged list, sync.sh's manifest list), so there's nothing to
+    # warn about there — only the default tracked-files run can under-report.
+    unchecked = []
     if args.paths:
         targets = [os.path.abspath(p) for p in args.paths]
     else:
@@ -252,6 +306,11 @@ def main():
         if targets is None:
             print("audit_public: not a git repo and no explicit paths given — nothing to audit.", file=sys.stderr)
             return 1
+        untracked = git_untracked_files(root) or []
+        if args.include_untracked:
+            targets.extend(untracked)
+        else:
+            unchecked = untracked
 
     all_findings = list(manifest_findings)
     for path in targets:
@@ -264,10 +323,15 @@ def main():
         print()
         print("audit_public: FAILED — nothing pushed/committed. Fix the above or extend an")
         print("  allowlist in scripts/audit_public.py if a finding is a genuine false positive.")
-        return 1
+        status = 1
+    else:
+        print(f"audit_public: clean — {len(targets)} file(s) checked, 0 findings.")
+        status = 0
 
-    print(f"audit_public: clean — {len(targets)} file(s) checked, 0 findings.")
-    return 0
+    # After either report, not just the clean one: a run that failed on one file has the same
+    # blind spot as a run that passed.
+    warn_untracked(root, unchecked)
+    return status
 
 
 if __name__ == "__main__":
