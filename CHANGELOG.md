@@ -4,7 +4,7 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.4] - 2026-08-11
 
 Everything here comes from a field test: someone with no relationship to the project ran a fresh
 clone on their own Windows machine, following only the README, and wrote down where it hurt.
@@ -208,6 +208,7 @@ First release. Everything below is new, since nothing shipped before this.
   `git tag --contains` on the closing PR's merge commit. `community/community.sh` reads it all
   back, structurally read-only.
 
+[0.1.4]: https://github.com/MikeC42001/JobHuntKit/releases/tag/v0.1.4
 [0.1.3]: https://github.com/MikeC42001/JobHuntKit/releases/tag/v0.1.3
 [0.1.2]: https://github.com/MikeC42001/JobHuntKit/releases/tag/v0.1.2
 [0.1.1]: https://github.com/MikeC42001/JobHuntKit/releases/tag/v0.1.1
