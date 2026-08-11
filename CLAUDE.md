@@ -40,11 +40,13 @@ renders it to PDF; `engine/verify_cvs.py` gates page count.
 
 ## Current state
 
-**Public since 2026-08-10, currently `v0.1.1`.** `v0.1.0` was the first release; `v0.1.1`
+**Public since 2026-08-10, currently `v0.1.2`.** `v0.1.0` was the first release; `v0.1.1`
 followed with the root-resolution fixes (a data root is identified by a `.jobhuntkit` marker
-rather than the presence of `config.json`, and an external `--root` is remembered). Description,
-12 topics, and the social preview are all live. Both tags are now frozen — moving one no longer
-reaches forks or clones, so anything further is a new version.
+rather than the presence of `config.json`, and an external `--root` is remembered); `v0.1.2` is
+documentation and repo metadata only, no engine change. Description, 12 topics, and the social
+preview are all live — the uploaded card is the 1200x600 dark variant,
+`.github/social-preview-share.png`. Every tag is frozen once pushed — moving one no longer reaches
+forks or clones, so anything further is a new version.
 
 Milestones M0–M4 are all complete and merged. What works, end to end:
 
@@ -70,7 +72,9 @@ Milestones M0–M4 are all complete and merged. What works, end to end:
 
 Deliberately not built: posting-change detection, extractors beyond
 generic/plaintext/LinkedIn, and anything else parked in
-[`community/OPEN_QUESTIONS.md`](community/OPEN_QUESTIONS.md) as Q-001 … Q-005.
+[`community/OPEN_QUESTIONS.md`](community/OPEN_QUESTIONS.md) as Q-001 … Q-009 — which now also
+covers rendering every CV style in the demo (Q-007), whether any of this works on Windows without
+Git Bash (Q-008), and making the colour palette settable without editing engine files (Q-009).
 
 ### Where the history lives
 
@@ -110,7 +114,7 @@ Resolved items move to [`logs/`](logs/) — this list is only what's still open.
 
 ---
 
-> Last updated: 2026-08-11 — public, `v0.1.1` tagged on `main`.
+> Last updated: 2026-08-11 — public, `v0.1.2` tagged on `main`.
 > This file holds standing facts only; the dated narrative lives in [`logs/`](logs/) and the
 > release summary in [`CHANGELOG.md`](CHANGELOG.md). Keep it that way — it was 468 lines before
 > the split, and 341 of them were history filed under "Current state".
