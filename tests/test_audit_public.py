@@ -5,6 +5,7 @@ scanned/copied file list, let alone reaches a destination repo.
 
 import os
 import subprocess
+import sys
 
 import audit_public
 from conftest import bash_executable
@@ -146,6 +147,90 @@ def test_self_excluded_sources_produce_no_content_findings():
     for rel_path in sorted(audit_public.CONTENT_CHECK_SELF_EXCLUDE):
         findings = audit_public.check_file(REPO_ROOT, os.path.join(REPO_ROOT, rel_path), terms=[])
         assert findings == [], (rel_path, findings)
+
+
+# ---------------------------------------------------------------------------
+# Untracked files — the audited set is not the same as what's on disk
+# ---------------------------------------------------------------------------
+
+def _git(root, *args):
+    return subprocess.run(
+        ["git", "-C", str(root), *args], capture_output=True, text=True, check=True,
+    )
+
+
+def _git_repo(tmp_path):
+    """A throwaway repo holding one of each: a tracked file, an untracked one, and an untracked
+    one that .gitignore covers. Identity is set locally so the test neither depends on nor touches
+    the machine's global git config."""
+    root = tmp_path / "repo"
+    root.mkdir()
+    _git(root, "init", "-q")
+    _git(root, "config", "user.email", "test@example.com")
+    _git(root, "config", "user.name", "Test")
+    _write(str(root / ".gitignore"), "ignored/\n")
+    _write(str(root / "tracked.md"), "Ordinary tracked notes.\n")
+    _git(root, "add", ".gitignore", "tracked.md")
+    _git(root, "commit", "-q", "-m", "init")
+    _write(str(root / "scratch.md"), "Ordinary untracked notes.\n")
+    _write(str(root / "ignored" / "artifact.md"), "Build output.\n")
+    return root
+
+
+def _run_audit(root, *args):
+    return subprocess.run(
+        [sys.executable, os.path.join(REPO_ROOT, "scripts", "audit_public.py"),
+         "--root", str(root), *args],
+        capture_output=True, text=True, check=False,
+    )
+
+
+def test_untracked_files_lists_only_non_ignored(tmp_path):
+    root = _git_repo(tmp_path)
+    found = {os.path.relpath(p, str(root)).replace(os.sep, "/")
+             for p in audit_public.git_untracked_files(str(root))}
+    assert found == {"scratch.md"}
+
+
+def test_untracked_files_outside_a_git_repo_returns_none(tmp_path):
+    """Same contract as git_tracked_files(): None, not an empty list, so the caller can tell
+    "no untracked files" apart from "this isn't a repo"."""
+    assert audit_public.git_untracked_files(str(tmp_path)) is None
+
+
+def test_default_run_warns_about_untracked_and_still_exits_zero(tmp_path):
+    """The bug this exists for: a clean report over the tracked set says nothing about the file
+    sitting next to it. Warning only — an untracked file isn't part of what the gate protects."""
+    root = _git_repo(tmp_path)
+    result = _run_audit(root)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "clean" in result.stdout
+    assert "WARNING" in result.stdout
+    assert "scratch.md" in result.stdout
+    assert "ignored/artifact.md" not in result.stdout
+
+
+def test_include_untracked_actually_scans_them(tmp_path):
+    root = _git_repo(tmp_path)
+    _write(str(root / "scratch.md"), "Mail real.person@gmail.com about this.\n")
+
+    clean_run = _run_audit(root)
+    assert clean_run.returncode == 0, "without the flag the leak sits unexamined"
+
+    result = _run_audit(root, "--include-untracked")
+    assert result.returncode == 1
+    assert "real.person@gmail.com" in result.stdout
+    assert "scratch.md" in result.stdout
+    assert "WARNING" not in result.stdout
+
+
+def test_explicit_paths_emit_no_untracked_warning(tmp_path):
+    """Explicit paths are the caller's own scope — the pre-commit hook's staged list, sync.sh's
+    manifest list. Warning there would be noise on every commit."""
+    root = _git_repo(tmp_path)
+    result = _run_audit(root, str(root / "tracked.md"))
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "WARNING" not in result.stdout
 
 
 # ---------------------------------------------------------------------------

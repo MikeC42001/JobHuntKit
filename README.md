@@ -25,6 +25,65 @@ It is deliberately opinionated: **one page, a locked spine, generated output you
 hand-edit.** If that's not the shape of CV you want, this probably isn't the tool for you — but
 if it is, it removes an entire category of copy-paste mistakes.
 
+## Requirements
+
+Three things, none of them a package this project publishes:
+
+| | | |
+|---|---|---|
+| **Python 3.8+** | stdlib only | no `pip install` for the engine itself |
+| **Node.js 22+** | 20.19+ also works | the renderer installs its one dependency, `marked`, on first run. `marked` is ESM-only and the converters `require()` it, so Node has to support `require(esm)` — which rules out 21.x and 22.0–22.11 as well as everything older ([why](docs/INSTALL.md#why-node-22)) |
+| **A Chromium-family browser** | Chrome, Edge, Chromium or Brave | auto-detected; override with `BROWSER_BIN=/path/to/browser` or `render.browser_bin` in `config.json` |
+
+**On Windows, run everything from Git Bash** (it comes with Git for Windows). The renderers are
+Bash scripts — PowerShell and `cmd` cannot run them.
+
+## Install
+
+Pick your platform, paste the block, done. Detail and troubleshooting:
+**[docs/INSTALL.md](docs/INSTALL.md)**.
+
+**Windows**
+
+```bash
+# winget ships with Windows 11 and current Windows 10. If this errors, see docs/INSTALL.md
+# for the direct-download route.
+winget --version
+
+winget install --id Git.Git -e
+winget install --id Python.Python.3.12 -e
+winget install --id OpenJS.NodeJS.LTS -e
+# Browser: Edge is already installed. Nothing to do.
+
+# Then close this terminal and open a NEW Git Bash window, so it picks up the new PATH.
+```
+
+**macOS**
+
+```bash
+brew install git python node
+# Browser: install Chrome if you don't have one already.
+```
+
+**Linux (Debian/Ubuntu)**
+
+```bash
+sudo apt update && sudo apt install -y git python3 chromium-browser
+
+# NOT apt's nodejs — it's 18.x on Ubuntu 24.04 and Debian 12, too old to load the renderer.
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
+```
+
+**Then check it, on any platform:**
+
+```bash
+bash scripts/preflight.sh
+```
+
+It prints one line per requirement, and for anything missing, what to install and how. If it says
+`all good`, the demo below will work.
+
 ## 60-second demo
 
 ```bash
@@ -33,15 +92,25 @@ bash demo.sh
 ```
 
 That's it — no `pip install`, no config. It builds and renders a fictional CV for a fictional
-persona ("Robin Vale," applying to a fictional company) using nothing but `python3`, `node`, and
-whichever Chrome/Edge/Chromium/Brave you already have installed. Requirements: Python 3.8+, a
-recent Node.js, and one Chromium-family browser. Windows users: run it from Git Bash.
+persona ("Robin Vale," applying to a fictional company) using nothing but the three things above.
 
 ## Set it up
 
-Two ways, same destination.
+Two ways, same destination. No AI required for either the setup or the pipeline.
 
-**Let an agent do it**
+**By hand**
+
+```bash
+python3 scripts/init_workspace.py
+# Windows: the command is usually `python`, not `python3`
+```
+
+Scaffolds `config.json`, `master/`, `profile/`, `applications/`, `templates/`, `images/`, and
+`produced/`. Then fill in your own details, in order:
+**[docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)** — six steps, ending in a rendered PDF.
+Your data doesn't have to live in the checkout: [Your own data](#your-own-data).
+
+**Or let an agent do it**
 
 ```text
 Clone https://github.com/MikeC42001/JobHuntKit and set it up for me.
@@ -53,17 +122,8 @@ dates, or achievements. Leave a placeholder and ask me instead.
 ```
 
 Claude Code users can skip the prompt: clone, then run `/cv-setup`.
-What that layer actually is: [The agent layer](#the-agent-layer).
-
-**Or do it yourself**
-
-```bash
-python3 scripts/init_workspace.py
-```
-
-Scaffolds `config.json`, `master/`, `profile/`, `applications/`, `templates/`, `images/`, and
-`produced/`. Walkthrough in order: **[docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)**.
-Your data doesn't have to live in the checkout: [Your own data](#your-own-data).
+What that layer actually is: [The agent layer](#the-agent-layer). Prefer to keep AI out of it
+entirely? [docs/NO-AI.md](docs/NO-AI.md).
 
 ## How it works
 
@@ -173,6 +233,7 @@ drift. Running the pipeline with no agent at all: [docs/NO-AI.md](docs/NO-AI.md)
 | Script | Does |
 |---|---|
 | `demo.sh` | Runs the whole pipeline end to end against `examples/demo/` — the 60-second demo above |
+| `scripts/preflight.sh` | Checks this machine has Python 3.8+, a Node that can load the renderer, and a browser, and says what to install if not — run it first, or let `demo.sh` run it for you |
 | `scripts/init_workspace.py` | Scaffolds a fresh data root from `templates/` — config.json, master/, profile/, applications/, templates/, images/, produced/ |
 | `scripts/make_avatar.py` | One-off helper: draws a simple initials-in-a-circle placeholder avatar PNG, for anyone who wants a photo without a stock image or licensing question. Requires Pillow (`pip install pillow`), a dev-only dependency — not part of the render pipeline |
 | `scripts/audit_public.py` | The leak gate — refuses to `sync.sh push` (and fails CI's `lint` job) if personal data, an unexpected binary, or an absolute path would leave the engine |
@@ -197,8 +258,9 @@ drift. Running the pipeline with no agent at all: [docs/NO-AI.md](docs/NO-AI.md)
 
 ## Status
 
-**v0.1.0.** The full loop works end to end: build, validate, render, verify, stage. CI runs it on
-Linux, macOS, and Windows. [CHANGELOG.md](CHANGELOG.md) has the detail.
+The full loop works end to end: build, validate, render, verify, stage. CI runs the test suite on
+Linux, macOS, and Windows, and `demo.sh` — the real pipeline, browser and all — on Linux, macOS,
+and Windows too. Released versions and what changed in each: [CHANGELOG.md](CHANGELOG.md).
 
 Not built yet, deliberately:
 
@@ -256,13 +318,6 @@ Everything person-specific lives in `config.json` (JSON, not YAML — no extra d
 parse it). Copy `config.example.json` to get started — it has every key `DEFAULT_CONFIG` does,
 though `person.name`/`person.file_prefix` are placeholders to replace rather than real defaults
 (see `docs/CONFIG.md`). At minimum you'll want those two, plus optionally `render.default_photo`.
-
-## Requirements
-
-- Python 3.8+ (stdlib only — no `pip install` for the engine itself)
-- Node.js (the renderer installs its one dependency, `marked`, on first run)
-- A Chromium-family browser — Chrome, Edge, Chromium, or Brave. Auto-detected; override with
-  `BROWSER_BIN=/path/to/browser` or `render.browser_bin` in `config.json`.
 
 ## Privacy
 

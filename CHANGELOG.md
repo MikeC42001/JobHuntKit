@@ -4,6 +4,52 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- **`demo.sh` and `scripts/sync.sh` no longer hardcode `python3`**, which is not a command that
+  exists on a stock Windows install — the python.org installer provides `python` and `py`, and the
+  `python3` usually found on PATH is Windows' App Execution Alias, a stub that opens the Microsoft
+  Store instead of running Python. `python_bin()` in `engine/lib.sh` tries `python3`, `python`,
+  `py` and the common install locations, accepting one only if it actually executes and reports
+  Python 3.8+ — so a Python installed without "Add python.exe to PATH" is still found, and a stub
+  is never selected. `PYTHON_BIN` overrides, matching `BROWSER_BIN`.
+- `config_get()` no longer aborts under `set -u` when `ROOT` is unset; an absent root now means
+  "no config", which is what a caller with no data root (such as `preflight.sh`) needs.
+- **The Node requirement is now stated, and checked.** It was "any recent version", which was not
+  true: `marked` is ESM-only and the converters `require()` it, so Node has to support
+  `require(esm)` — **20.19+ or 22.12+**, and notably not 21.x or 22.0–22.11. `preflight.sh` had
+  been checking only that `node` existed, so it reported all-clear on machines that then failed at
+  the first render; it now probes the capability itself. `ensure_marked_installed()` carries the
+  same guard, since a renderer can be run directly.
+- **The Debian/Ubuntu install instructions no longer use `apt`'s `nodejs`.** It is Node 18 on
+  Ubuntu 24.04 LTS and Debian 12, and Node 12 on Ubuntu 22.04 — every current LTS ships one too
+  old to load the renderer. README and `docs/INSTALL.md` now use nodesource or `nvm`.
+
+### Added
+
+- **`scripts/preflight.sh`** — checks Python, Node.js and a browser, prints a concrete fix for
+  anything missing, and exits non-zero. `demo.sh` runs it first, so a missing requirement is a
+  checklist up front rather than a failure three steps into a render.
+- **`docs/INSTALL.md`** — per-OS installation, the Windows Store-alias and PATH traps, and how to
+  point `PYTHON_BIN`/`BROWSER_BIN` at something manually.
+- CI's `render-matrix` job runs `demo.sh` end to end on `windows-latest` as well as Linux and
+  macOS. The Windows render path had never executed in CI before.
+
+### Changed
+
+- `README.md` leads with Requirements and a per-OS copy-paste install block, before the demo
+  command that needs them; "Set it up" puts the by-hand path first, the agent prompt second.
+
+- `scripts/audit_public.py` now reports untracked, non-ignored files that its default run did
+  **not** check, and takes `--include-untracked` to audit them as well. The audited set is every
+  git-tracked file, so a file that exists but isn't tracked was invisible to the gate — including
+  one added specifically to be checked — and a clean result could not be told apart from an
+  unasked question. The warning does not change any exit code: an untracked file isn't part of the
+  commit or push the gate protects. Passing explicit paths is unaffected, since those are the
+  caller's own chosen scope.
+
 ## [0.1.2] - 2026-08-11
 
 Documentation and repo metadata only — no engine changes.

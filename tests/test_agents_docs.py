@@ -15,8 +15,12 @@ README_PATH = os.path.join(REPO_ROOT, "README.md")
 # (a fence, not a blockquote, because GitHub only renders its copy button on fenced code — and
 # copying is the entire point of that block). Every backticked path inside it is a file someone's
 # agent will be told to open on a fresh clone.
+#
+# Matched as a ```text fence rather than "the first fence in the section": the section also leads
+# with a ```bash block now that the manual path comes first, and the prompt is prose for an agent,
+# not a shell command. That distinction is what the fence language already encodes.
 BOOTSTRAP_HEADING = "## Set it up"
-BOOTSTRAP_FENCE_RE = re.compile(r"^```[a-z]*\n(.*?)^```", re.MULTILINE | re.DOTALL)
+BOOTSTRAP_FENCE_RE = re.compile(r"^```text\n(.*?)^```", re.MULTILINE | re.DOTALL)
 BACKTICKED_PATH_RE = re.compile(r"`([A-Za-z0-9_./-]+\.(?:md|py|sh|json))`")
 
 # Only actual invocations (the "! bash ..." lines Claude Code runs), not prose mentions of the

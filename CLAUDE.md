@@ -8,9 +8,10 @@ a tagged master CV + a per-posting selection file.
 2026-08-04 and opened once M0–M4 were done and `v0.1.0` was tagged)
 **Public identity:** in any tracked file, refer to the maintainer only as `MikeC42001` — never a
 first name, full name, or initials. `LICENSE`'s copyright line included.
-**Stack:** Python 3.8+ (stdlib only), Node.js (`marked` for markdown→HTML), Bash renderers →
-headless Chrome/Chromium/Edge/Brave `--print-to-pdf`. No build system, no pip dependencies for
-the engine itself.
+**Stack:** Python 3.8+ (stdlib only), Node.js 22+ (`marked` for markdown→HTML; it's ESM-only and
+the converters `require()` it, so the floor is Node's `require(esm)` support — 20.19+/22.12+, not
+21.x or 22.0–22.11), Bash renderers → headless Chrome/Chromium/Edge/Brave `--print-to-pdf`. No
+build system, no pip dependencies for the engine itself.
 
 **License:** MIT (`LICENSE`). Bundled IBM Plex fonts are SIL OFL 1.1 (`NOTICE` +
 `engine/render-support/fonts/OFL.txt`).
@@ -40,18 +41,20 @@ renders it to PDF; `engine/verify_cvs.py` gates page count.
 
 ## Current state
 
-**Public since 2026-08-10, currently `v0.1.1`.** `v0.1.0` was the first release; `v0.1.1`
+**Public since 2026-08-10, currently `v0.1.2`.** `v0.1.0` was the first release; `v0.1.1`
 followed with the root-resolution fixes (a data root is identified by a `.jobhuntkit` marker
-rather than the presence of `config.json`, and an external `--root` is remembered). Description,
-12 topics, and the social preview are all live. Both tags are now frozen — moving one no longer
-reaches forks or clones, so anything further is a new version.
+rather than the presence of `config.json`, and an external `--root` is remembered); `v0.1.2` is
+documentation and repo metadata only, no engine change. Description, 12 topics, and the social
+preview are all live — the uploaded card is the 1200x600 dark variant,
+`.github/social-preview-share.png`. Every tag is frozen once pushed — moving one no longer reaches
+forks or clones, so anything further is a new version.
 
 Milestones M0–M4 are all complete and merged. What works, end to end:
 
 - `bash demo.sh` runs the whole pipeline against the fictional `examples/demo/` persona —
   build → validate → render → verify → one-page PDF, plus the full CV, the photo variant, and a
-  cover letter. CI runs it for real on Linux and macOS, so "cross-platform" is verified rather
-  than assumed.
+  cover letter. CI runs it for real on Linux, macOS and Windows, so "cross-platform" is verified
+  rather than assumed.
 - **Two pipelines from one `application.md`**: the tailored one-pager (`cv-minimal.md`) and the
   long-form full CV (`cv.md`), opted into per company via a `pipelines:` front-matter key.
 - **Two masters**: `master/master_cv.md` is the complete inventory; `master_cv_minimal.md` is its
@@ -70,7 +73,9 @@ Milestones M0–M4 are all complete and merged. What works, end to end:
 
 Deliberately not built: posting-change detection, extractors beyond
 generic/plaintext/LinkedIn, and anything else parked in
-[`community/OPEN_QUESTIONS.md`](community/OPEN_QUESTIONS.md) as Q-001 … Q-005.
+[`community/OPEN_QUESTIONS.md`](community/OPEN_QUESTIONS.md) as Q-001 … Q-009 — which now also
+covers rendering every CV style in the demo (Q-007), whether any of this works on Windows without
+Git Bash (Q-008), and making the colour palette settable without editing engine files (Q-009).
 
 ### Where the history lives
 
@@ -89,13 +94,7 @@ the expensive part to reconstruct. `CHANGELOG.md` won't have them, by design.
 Recorded here rather than only in a next-session prompt, since those get overwritten each session.
 Resolved items move to [`logs/`](logs/) — this list is only what's still open.
 
-1. **`audit_public.py` only inspects tracked files.** `git_tracked_files()` is the input, so an
-   untracked file is invisible to the gate — including one that was just added specifically to
-   be checked. It reported a clean 119 files while both new social-card PNGs sat unstaged and
-   unexamined, which reads as reassurance when it's actually silence. Worth a warning line when
-   the working tree has untracked non-ignored files, so a clean result can't be mistaken for
-   full coverage.
-2. **README banner using the light social card.** `.github/social-preview-light.png` currently
+1. **README banner using the light social card.** `.github/social-preview-light.png` currently
    has no consumer. GitHub renders theme-aware images in a README via `<picture>` +
    `prefers-color-scheme`, which is the one place a light/dark pair actually works (the social
    preview itself cannot).
@@ -110,7 +109,7 @@ Resolved items move to [`logs/`](logs/) — this list is only what's still open.
 
 ---
 
-> Last updated: 2026-08-11 — public, `v0.1.1` tagged on `main`.
+> Last updated: 2026-08-11 — public, `v0.1.2` tagged on `main`.
 > This file holds standing facts only; the dated narrative lives in [`logs/`](logs/) and the
 > release summary in [`CHANGELOG.md`](CHANGELOG.md). Keep it that way — it was 468 lines before
 > the split, and 341 of them were history filed under "Current state".
