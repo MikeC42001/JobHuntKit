@@ -109,7 +109,10 @@ Resolved items move to [`logs/`](logs/) — this list is only what's still open.
 
 ---
 
-> Last updated: 2026-08-11 — public, `v0.1.2` tagged on `main`.
+> Last updated: 2026-08-11 — public. `v0.1.2` is the newest tag, and **`main` now sits ahead of
+> it**: the Windows first-run fixes were merged untagged, by decision, so `CHANGELOG.md`'s
+> `[Unreleased]` section is what describes the current `main`. The usual rule is that `main`
+> advances at a tagged release; this is a deliberate exception, not drift.
 > This file holds standing facts only; the dated narrative lives in [`logs/`](logs/) and the
 > release summary in [`CHANGELOG.md`](CHANGELOG.md). Keep it that way — it was 468 lines before
 > the split, and 341 of them were history filed under "Current state".
