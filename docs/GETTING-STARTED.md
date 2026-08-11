@@ -77,8 +77,33 @@ interactively, including the locked-spine question in the next step below.
 **This is the one genuinely consequential decision in the whole setup.** Open
 `master/CV_SPEC.md` and answer: which 1–4 entries should *always* appear on every CV this
 generates, no exceptions? Write them down there, then mirror the decision into `config.json`'s
-`spine.locked_order` (the ids) and `spine.education.required_titles` (education entries, by
-rendered title text, not id).
+`spine` block. **Three keys, not two — all of them:**
+
+```jsonc
+"spine": {
+  // 1. Which ids are locked, in the order they must appear in the rendered CV.
+  //    Order is the master file's own block order, which runs OLDEST FIRST — not
+  //    the most-recent-first convention you'd use writing a CV by hand.
+  "locked_order": ["exp-previous-role", "exp-current-role"],
+
+  // 2. How to RECOGNISE each of those ids in the rendered output: a substring of
+  //    that entry's title line, usually the employer name. Without this, check_cv.py
+  //    has nothing to match against and reports every locked entry as missing —
+  //    even when it rendered perfectly.
+  "title_markers": {
+    "exp-previous-role": ["Coastal Retail Group"],
+    "exp-current-role":  ["Northstar Logistics"]
+  },
+
+  // 3. Education entries, by rendered title text rather than by id.
+  "education": { "required_titles": ["BSc"] }
+}
+```
+
+`title_markers` is the one that catches people out, because nothing forces you to write it and
+its absence looks like a content problem rather than a config one. The ids are yours; the
+substrings are whatever actually appears in the rendered title. Full reference, including
+`optional_ids` and `verbatim_ids`: [CONFIG.md](CONFIG.md).
 
 A locked spine is what keeps every future CV consistent instead of drifting the way
 hand-copied ones do — once it's set, `check_cv.py` can actually verify something instead of

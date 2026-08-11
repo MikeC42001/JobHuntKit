@@ -6,6 +6,7 @@ produced — the same class of bug (locked-experience entry reordered or a verba
 dropped) can happen to a hand-edited file too, and the checker doesn't care which.
 """
 
+import json
 import os
 
 import check_cv
@@ -234,3 +235,63 @@ def test_coverage_totals_for_demo_application(demo_root, capsys):
     assert "13 of 14 master items present" in out
     assert "exp-course-tutor" in out  # DELIBERATE, declared in ## Omit
     assert "SILENT" not in out  # nothing undeclared for this fully-migrated application
+
+
+# ---------------------------------------------------------------------------
+# An unconfigured spine must diagnose itself, not blame the content
+# ---------------------------------------------------------------------------
+
+def _rewrite_spine(demo_root, mutate):
+    """Edit config.json's spine block in the throwaway demo copy."""
+    path = os.path.join(demo_root, "config.json")
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    mutate(data["spine"])
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+
+def test_empty_title_markers_reports_the_config_gap_not_missing_entries(demo_root):
+    """The first-real-build failure found in field testing: a user fills locked_order (which the
+    walkthrough tells them to) and leaves title_markers at its scaffolded {} (which it didn't).
+    identify() then matches nothing, so every locked entry reports as missing — while sitting
+    correctly in the rendered CV. The content is fine; the config can't see it. Say so."""
+    _rewrite_spine(demo_root, lambda spine: spine.update({"title_markers": {}}))
+
+    cfg, alias_map = _cfg_and_alias(demo_root)
+    failures = check_cv.check_structure(cfg, _company_dir(demo_root), alias_map)
+
+    assert len(failures) == 1, f"expected one diagnosis, not a pile of blame: {failures}"
+    assert "title_markers" in failures[0]
+    assert "missing" not in failures[0], "must not read as though content were dropped"
+
+
+def test_a_locked_id_with_no_marker_is_named_as_such(demo_root):
+    """Partial version of the same gap: title_markers exists but doesn't cover every locked id.
+    That id can never be found no matter what the CV says, so it's a config fault, not content."""
+    _rewrite_spine(demo_root, lambda spine: spine["title_markers"].pop("exp-current-role"))
+
+    cfg, alias_map = _cfg_and_alias(demo_root)
+    failures = check_cv.check_structure(cfg, _company_dir(demo_root), alias_map)
+
+    joined = " ".join(failures)
+    assert "title_markers" in joined and "exp-current-role" in joined, failures
+    assert not any("'current role' entry missing" in f for f in failures), (
+        "the unmatchable id must be reported once, with its real cause, not also as missing"
+    )
+
+
+def test_a_configured_spine_still_catches_genuinely_missing_content(demo_root):
+    """Guard on the guard: the new short-circuit must not swallow real failures when
+    title_markers IS configured."""
+    cv_path = _cv_path(demo_root)
+    with open(cv_path, "r", encoding="utf-8") as f:
+        text = f.read()
+    text = text[:text.index("**Software Engineer")] + text[text.index("## Skills"):]
+    with open(cv_path, "w", encoding="utf-8") as f:
+        f.write(text)
+
+    cfg, alias_map = _cfg_and_alias(demo_root)
+    failures = check_cv.check_structure(cfg, _company_dir(demo_root), alias_map)
+
+    assert any("current role" in f and "missing" in f for f in failures), failures

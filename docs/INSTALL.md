@@ -44,6 +44,39 @@ winget install --id OpenJS.NodeJS.LTS -e
 If it errors instead — LTSC and Server editions, offline images, and some managed machines don't
 have it, and it can be blocked by policy — use the downloads below.
 
+### The Git line fails with "exit code 1" and nothing else
+
+If Git is **already installed**, that line is an *upgrade*, and the installer has to replace files
+that your own Git Bash window has open. It tries to ask "please close these processes", but
+`winget` runs it unattended, so there's nobody to answer — the prompt defaults to Cancel and the
+install aborts. All you see is:
+
+```
+O instalador falhou com o código de saída: 1
+```
+
+with a log path. The real reason is several screens into that log (`bash.exe (PID …) — please
+terminate those processes and retry`).
+
+Fix: skip the Git line if you already have Git — you clearly do, since you cloned this. Or run it
+from PowerShell with every Git Bash window closed.
+
+### A Node version manager will shadow the winget install
+
+If you use `nvm`, `nvm4w`, `fnm`, `volta` or similar, its shim sits ahead of `winget`'s Node on
+PATH, so `winget install OpenJS.NodeJS.LTS` will appear to succeed and change nothing about what
+`node` resolves to. That matters if your version manager pins something older than the floor.
+
+`scripts/preflight.sh` prints the **resolved path** of the Node it found, not just the version,
+which is how you spot this:
+
+```
+  ok    node     v24.13.1 — /c/nvm4w/nodejs/node
+```
+
+If that path is a version manager's, use the version manager to install and select Node 22+
+rather than fighting it with `winget`.
+
 ### Without winget
 
 | | |

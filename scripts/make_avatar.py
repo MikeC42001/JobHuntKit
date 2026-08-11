@@ -17,6 +17,15 @@ Usage:
 import argparse
 import sys
 
+# Force UTF-8 stdout/stderr. This script lives outside engine/, so it never imports
+# engine/config.py, which is where that normally happens once for the whole engine — without it,
+# Python on Windows falls back to the console codepage and the em dashes in this file's own help
+# text and error messages print as mangled replacement characters. That is the first output a new
+# user sees from this script, so it's worth the four lines. See engine/config.py for the rationale.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8")
+
 
 def initials(name):
     parts = [p for p in name.split() if p]

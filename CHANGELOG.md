@@ -4,6 +4,38 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+Everything here comes from a field test: someone with no relationship to the project ran a fresh
+clone on their own Windows machine, following only the README, and wrote down where it hurt.
+
+### Fixed
+
+- **A first real (non-demo) build always failed `check_cv.py`.** `docs/GETTING-STARTED.md`'s
+  "Decide what's locked" step named `spine.locked_order` and `spine.education.required_titles`
+  but not `spine.title_markers` — the key that tells the checker how to *recognise* a locked entry
+  in the rendered CV. Scaffolded config ships it empty, so nothing could ever match, and every
+  locked entry was reported as `'current role' entry missing` while sitting correctly in the
+  output. The step now documents all three keys with a worked example; `check_cv.py` diagnoses the
+  gap directly instead of blaming content that is present, both when `title_markers` is empty and
+  when it merely omits an id that `locked_order` names.
+- `scripts/make_avatar.py` printed `?` in place of em dashes in its own help and error text on
+  Windows. It lives outside `engine/`, so it never picked up the UTF-8 stdout setup that
+  `engine/config.py` does once for everything else.
+
+### Changed
+
+- The README's install flow now clones the repo **before** telling you to run
+  `bash scripts/preflight.sh` from it. Read strictly top to bottom, the old order asked you to run
+  a script from a directory you did not yet have.
+- `docs/INSTALL.md` covers two Windows traps found in the field: `winget install --id Git.Git`
+  fails with a bare `exit code 1` when run from Git Bash with Git already installed (the upgrade
+  cannot replace files your own shell holds open, and the "close these processes" prompt has
+  nobody to answer it), and a Node version manager silently shadows whatever `winget` installs —
+  which is why `preflight.sh` prints the resolved path of the Node it found, not just its version.
+- `docs/GETTING-STARTED.md` states that `locked_order` follows the master file's own block order,
+  oldest first, rather than the most-recent-first convention of a hand-written CV.
+
 ## [0.1.3] - 2026-08-11
 
 First release driven by someone other than the author trying to run this: a fresh clone on a

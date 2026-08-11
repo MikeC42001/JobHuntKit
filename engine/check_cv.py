@@ -130,7 +130,31 @@ def check_structure(cfg, company_dir, alias_map, pipeline="minimal"):
             seen_positions[spine_id] = idx
 
     locked_order = cfg.locked_order
+
+    # A locked spine with no title_markers can never match anything: identify() has nothing to
+    # match against, so every locked entry reports as missing even when it rendered perfectly.
+    # Say *that*, once, instead of a list of failures blaming content that is actually present —
+    # a first-time user following the walkthrough hits this on their first real build, and
+    # "'current role' entry missing" sends them looking in exactly the wrong place.
+    if locked_order and not cfg.title_markers:
+        return failures + [
+            "spine.title_markers is empty in config.json, so no locked entry can be recognised. "
+            "It maps each id in spine.locked_order to substrings of that entry's rendered title, "
+            "e.g. \"exp-current-role\": [\"Acme Corp\"]. Nothing below this line was checked. "
+            "See docs/CONFIG.md."
+        ]
+
+    unmatchable = [sid for sid in locked_order if sid not in cfg.title_markers]
+    if unmatchable:
+        failures.append(
+            "spine.title_markers has no entry for " + ", ".join(unmatchable) + " — those ids are "
+            "in spine.locked_order but have no title substring to recognise them by, so they "
+            "cannot be found regardless of what the CV contains. See docs/CONFIG.md."
+        )
+
     for spine_id in locked_order:
+        if spine_id in unmatchable:
+            continue  # already reported above, and with the actual cause
         if spine_id not in seen_positions:
             pretty = spine_id.replace("exp-", "").replace("-", " ")
             failures.append(f"experience: '{pretty}' entry missing")

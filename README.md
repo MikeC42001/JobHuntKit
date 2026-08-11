@@ -58,6 +58,11 @@ winget install --id OpenJS.NodeJS.LTS -e
 # Then close this terminal and open a NEW Git Bash window, so it picks up the new PATH.
 ```
 
+Two things that bite on this block, both covered in [docs/INSTALL.md](docs/INSTALL.md): the Git
+line fails with a bare `exit code 1` if you run it *from* Git Bash and Git is already installed
+(the upgrade can't replace files your own shell has open), and if you use a Node version manager
+like `nvm`, it will keep shadowing whatever `winget` installs.
+
 **macOS**
 
 ```bash
@@ -75,9 +80,10 @@ curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs
 ```
 
-**Then check it, on any platform:**
+**Then get the repo and check the machine, on any platform:**
 
 ```bash
+git clone https://github.com/MikeC42001/JobHuntKit && cd JobHuntKit
 bash scripts/preflight.sh
 ```
 
@@ -86,8 +92,9 @@ It prints one line per requirement, and for anything missing, what to install an
 
 ## 60-second demo
 
+From inside the clone you just made:
+
 ```bash
-git clone https://github.com/MikeC42001/JobHuntKit && cd JobHuntKit
 bash demo.sh
 ```
 
