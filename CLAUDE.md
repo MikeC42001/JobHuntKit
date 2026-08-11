@@ -41,13 +41,15 @@ renders it to PDF; `engine/verify_cvs.py` gates page count.
 
 ## Current state
 
-**Public since 2026-08-10, currently `v0.1.2`.** `v0.1.0` was the first release; `v0.1.1`
+**Public since 2026-08-10, currently `v0.1.3`.** `v0.1.0` was the first release; `v0.1.1`
 followed with the root-resolution fixes (a data root is identified by a `.jobhuntkit` marker
-rather than the presence of `config.json`, and an external `--root` is remembered); `v0.1.2` is
-documentation and repo metadata only, no engine change. Description, 12 topics, and the social
-preview are all live — the uploaded card is the 1200x600 dark variant,
-`.github/social-preview-share.png`. Every tag is frozen once pushed — moving one no longer reaches
-forks or clones, so anything further is a new version.
+rather than the presence of `config.json`, and an external `--root` is remembered); `v0.1.2` was
+documentation and repo metadata only; `v0.1.3` is first-run reliability, prompted by a fresh clone
+on Windows failing at the first command — the interpreter and the Node floor are both now
+*probed* rather than assumed, and `scripts/preflight.sh` reports what's missing before anything
+runs. Description, 12 topics, and the social preview are all live — the uploaded card is the
+1200x600 dark variant, `.github/social-preview-share.png`. Every tag is frozen once pushed —
+moving one no longer reaches forks or clones, so anything further is a new version.
 
 Milestones M0–M4 are all complete and merged. What works, end to end:
 
@@ -109,10 +111,7 @@ Resolved items move to [`logs/`](logs/) — this list is only what's still open.
 
 ---
 
-> Last updated: 2026-08-11 — public. `v0.1.2` is the newest tag, and **`main` now sits ahead of
-> it**: the Windows first-run fixes were merged untagged, by decision, so `CHANGELOG.md`'s
-> `[Unreleased]` section is what describes the current `main`. The usual rule is that `main`
-> advances at a tagged release; this is a deliberate exception, not drift.
+> Last updated: 2026-08-11 — public, `v0.1.3` tagged on `main`.
 > This file holds standing facts only; the dated narrative lives in [`logs/`](logs/) and the
 > release summary in [`CHANGELOG.md`](CHANGELOG.md). Keep it that way — it was 468 lines before
 > the split, and 341 of them were history filed under "Current state".

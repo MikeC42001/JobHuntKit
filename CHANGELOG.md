@@ -4,7 +4,10 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.3] - 2026-08-11
+
+First release driven by someone other than the author trying to run this: a fresh clone on a
+Windows machine failed at the first command. Everything below follows from that one run.
 
 ### Fixed
 
@@ -173,6 +176,7 @@ First release. Everything below is new, since nothing shipped before this.
   `git tag --contains` on the closing PR's merge commit. `community/community.sh` reads it all
   back, structurally read-only.
 
+[0.1.3]: https://github.com/MikeC42001/JobHuntKit/releases/tag/v0.1.3
 [0.1.2]: https://github.com/MikeC42001/JobHuntKit/releases/tag/v0.1.2
 [0.1.1]: https://github.com/MikeC42001/JobHuntKit/releases/tag/v0.1.1
 [0.1.0]: https://github.com/MikeC42001/JobHuntKit/releases/tag/v0.1.0
