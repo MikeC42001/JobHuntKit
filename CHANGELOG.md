@@ -4,6 +4,18 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- `scripts/audit_public.py` now reports untracked, non-ignored files that its default run did
+  **not** check, and takes `--include-untracked` to audit them as well. The audited set is every
+  git-tracked file, so a file that exists but isn't tracked was invisible to the gate — including
+  one added specifically to be checked — and a clean result could not be told apart from an
+  unasked question. The warning does not change any exit code: an untracked file isn't part of the
+  commit or push the gate protects. Passing explicit paths is unaffected, since those are the
+  caller's own chosen scope.
+
 ## [0.1.2] - 2026-08-11
 
 Documentation and repo metadata only — no engine changes.

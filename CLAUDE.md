@@ -93,13 +93,7 @@ the expensive part to reconstruct. `CHANGELOG.md` won't have them, by design.
 Recorded here rather than only in a next-session prompt, since those get overwritten each session.
 Resolved items move to [`logs/`](logs/) — this list is only what's still open.
 
-1. **`audit_public.py` only inspects tracked files.** `git_tracked_files()` is the input, so an
-   untracked file is invisible to the gate — including one that was just added specifically to
-   be checked. It reported a clean 119 files while both new social-card PNGs sat unstaged and
-   unexamined, which reads as reassurance when it's actually silence. Worth a warning line when
-   the working tree has untracked non-ignored files, so a clean result can't be mistaken for
-   full coverage.
-2. **README banner using the light social card.** `.github/social-preview-light.png` currently
+1. **README banner using the light social card.** `.github/social-preview-light.png` currently
    has no consumer. GitHub renders theme-aware images in a README via `<picture>` +
    `prefers-color-scheme`, which is the one place a light/dark pair actually works (the social
    preview itself cannot).
