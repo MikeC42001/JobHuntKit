@@ -18,9 +18,22 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LIB_SH = os.path.join(REPO_ROOT, "engine", "lib.sh")
 
 
+def _bash_abs():
+    """An absolute path to bash. Some tests below hand the child a PATH containing only the shim
+    directory, and on POSIX the executable is resolved against *that* PATH — so a bare "bash"
+    raises FileNotFoundError before the test starts. Windows never showed this, because
+    bash_executable() already returns an absolute path there."""
+    candidate = bash_executable()
+    return candidate if os.path.isabs(candidate) else (shutil.which(candidate) or candidate)
+
+
 def _shim(dir_path, name, body):
     """An executable shell shim on PATH. No extension: Git Bash resolves these fine, and a real
-    Store alias is likewise something bash finds and then can't usefully run."""
+    Store alias is likewise something bash finds and then can't usefully run.
+
+    Shebang is `#!/bin/sh` — an absolute path that needs no PATH lookup of its own, present on
+    every platform this runs on. `#!/usr/bin/env bash` would send the kernel looking for bash on
+    the very PATH these tests deliberately empty."""
     os.makedirs(dir_path, exist_ok=True)
     path = os.path.join(dir_path, name)
     with open(path, "w", encoding="utf-8", newline="\n") as f:
@@ -32,7 +45,7 @@ def _shim(dir_path, name, body):
 def _store_stub(dir_path, name="python3"):
     """Reproduces the Microsoft Store alias: on PATH, exits non-zero, runs no Python."""
     return _shim(dir_path, name, (
-        "#!/usr/bin/env bash\n"
+        "#!/bin/sh\n"
         'echo "Python was not found; run without arguments to install from the '
         'Microsoft Store" >&2\n'
         "exit 9009\n"
@@ -40,7 +53,7 @@ def _store_stub(dir_path, name="python3"):
 
 
 def _working_python(dir_path, name, real_python):
-    return _shim(dir_path, name, f'#!/usr/bin/env bash\nexec "{real_python}" "$@"\n')
+    return _shim(dir_path, name, f'#!/bin/sh\nexec "{real_python}" "$@"\n')
 
 
 def _resolve(path_prefix=None, env_extra=None):
@@ -91,7 +104,7 @@ def test_missing_python3_falls_back_to_python(tmp_path, real_python):
     env["PATH"] = shim_dir
     env.pop("PYTHON_BIN", None)
     result = subprocess.run(
-        [bash_executable(), "-c", f'source "{LIB_SH}"; python_bin'],
+        [_bash_abs(), "-c", f'source "{LIB_SH}"; python_bin'],
         capture_output=True, text=True, env=env, check=False,
     )
     assert result.returncode == 0, result.stderr
@@ -111,7 +124,7 @@ def test_a_broken_name_is_never_returned(tmp_path):
     env.pop("PYTHON_BIN", None)
     env["HOME"] = str(tmp_path)
     result = subprocess.run(
-        [bash_executable(), "-c", f'source "{LIB_SH}"; python_bin'],
+        [_bash_abs(), "-c", f'source "{LIB_SH}"; python_bin'],
         capture_output=True, text=True, env=env, check=False,
     )
 
