@@ -21,9 +21,13 @@ is_windows_shell() {
 # config_get "render.browser_bin" — reads one dotted key out of $ROOT/config.json via node
 # (already a hard dependency of every renderer). Prints nothing if the file, key, or value is
 # absent — callers should treat empty output as "not set."
+#
+# ROOT unset is treated as "no config", not as an error: every renderer sets it, but preflight.sh
+# has no data root to speak of and still wants find_browser(). Under `set -u` a bare $ROOT would
+# abort the caller instead of falling through to the next lookup.
 config_get() {
   local key="$1"
-  local config_path="$ROOT/config.json"
+  local config_path="${ROOT:-}/config.json"
   [ -f "$config_path" ] || return 0
   local config_path_native
   config_path_native="$(native_path "$config_path")"
@@ -80,6 +84,61 @@ find_browser() {
 no_browser_error() {
   echo "$1: no Chrome/Chromium/Edge/Brave install found." >&2
   echo "  Install one, or set BROWSER_BIN=/path/to/browser, or set render.browser_bin in config.json." >&2
+}
+
+# python_bin — the interpreter to run engine/*.py with. Same search shape as find_browser above:
+# explicit override, then PATH, then well-known install locations.
+#
+# `python3` is the wrong name to hardcode on Windows, twice over. The python.org installer
+# provides `python` and `py` and no `python3` at all — and a `python3` usually IS on PATH anyway:
+# Windows' own App Execution Alias, a stub that opens the Microsoft Store instead of running
+# anything. So `command -v` finding a candidate proves nothing here, and a candidate is accepted
+# only if it actually executes and reports a new enough Python. Do not "simplify" that back into
+# an existence check.
+python_bin() {
+  local c
+  if [ -n "${PYTHON_BIN:-}" ]; then
+    if _is_usable_python "$PYTHON_BIN"; then echo "$PYTHON_BIN"; return 0; fi
+    echo "lib: PYTHON_BIN set but not a working Python 3.8+: $PYTHON_BIN" >&2
+    return 1
+  fi
+
+  for c in python3 python py; do
+    if command -v "$c" >/dev/null 2>&1 && _is_usable_python "$c"; then echo "$c"; return 0; fi
+  done
+
+  # Installed but not on PATH — the commonest Windows outcome, since "Add python.exe to PATH" is
+  # an unticked checkbox in the installer. Globs, because the version is in the directory name.
+  # Per-user locations go through $HOME/$LOCALAPPDATA rather than a hardcoded per-user directory,
+  # same as find_browser above: no username baked in, and the leak gate rejects the alternative.
+  local p
+  for p in \
+    "$HOME"/AppData/Local/Programs/Python/Python3*/python.exe \
+    "${LOCALAPPDATA:-}"/Programs/Python/Python3*/python.exe \
+    "/c/Program Files/Python3"*/python.exe \
+    /c/Python3*/python.exe; do
+    if [ -f "$p" ] && _is_usable_python "$p"; then echo "$p"; return 0; fi
+  done
+
+  return 1
+}
+
+# Runs the candidate rather than trusting its name. Exit 0 only for a real Python >= 3.8.
+_is_usable_python() {
+  "$1" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 8) else 1)' >/dev/null 2>&1
+}
+
+no_python_error() {
+  echo "$1: no Python 3.8+ found." >&2
+  if is_windows_shell; then
+    echo "  On Windows the command is usually 'python', not 'python3' — and the 'python3' on PATH" >&2
+    echo "  is often the Microsoft Store stub, which is why this check runs it instead of looking" >&2
+    echo "  it up. Install from https://python.org and tick \"Add python.exe to PATH\"." >&2
+  else
+    echo "  Install Python 3.8 or newer from your package manager or https://python.org." >&2
+  fi
+  echo "  Already installed somewhere unusual? Point at it: export PYTHON_BIN=/path/to/python" >&2
+  echo "  See docs/INSTALL.md, or run: bash scripts/preflight.sh" >&2
 }
 
 # Native filesystem path for handing to a Windows .exe browser from Git Bash; identity on

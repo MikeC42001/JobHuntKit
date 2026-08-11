@@ -1,22 +1,30 @@
 #!/usr/bin/env bash
 # demo.sh — the 60-second demo. Builds and renders the fictional "Robin Vale" persona in
 # examples/demo/, using the exact same scripts a real user would run on their own data (just
-# pointed at a different --root). Requires only python3, node, and a Chromium-family browser.
+# pointed at a different --root). Requires only Python 3.8+, node, and a Chromium-family browser.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEMO_ROOT="$SCRIPT_DIR/examples/demo"
 
+# Every requirement checked up front, with a fix printed for each one that's missing — being told
+# "install Node.js" beats discovering it at step 3 of 10, halfway through a render.
+bash "$SCRIPT_DIR/scripts/preflight.sh" --quiet
+
+# shellcheck source=engine/lib.sh
+source "$SCRIPT_DIR/engine/lib.sh"
+PY="$(python_bin)"
+
 echo "== JobHuntKit demo — building Robin Vale's CV for Orbital Dynamics =="
 echo
 
 echo "[1/10] Assembling cv-minimal.md AND cv.md (application.md opts into both pipelines)..."
-python3 "$SCRIPT_DIR/engine/build_cv.py" --root "$DEMO_ROOT" --all
+"$PY" "$SCRIPT_DIR/engine/build_cv.py" --root "$DEMO_ROOT" --all
 
 echo
 echo "[2/10] Checking the locked spine landed correctly (minimal pipeline)..."
-python3 "$SCRIPT_DIR/engine/check_cv.py" --root "$DEMO_ROOT"
+"$PY" "$SCRIPT_DIR/engine/check_cv.py" --root "$DEMO_ROOT"
 
 echo
 echo "[3/10] Rendering the tailored CV to PDF..."
@@ -25,7 +33,7 @@ bash "$SCRIPT_DIR/engine/render_cv_minimal.sh" --root "$DEMO_ROOT" \
 
 echo
 echo "[4/10] Verifying the render is exactly one page..."
-python3 "$SCRIPT_DIR/engine/verify_cvs.py" --root "$DEMO_ROOT" \
+"$PY" "$SCRIPT_DIR/engine/verify_cvs.py" --root "$DEMO_ROOT" \
   "$DEMO_ROOT/applications/offer-pages/Orbital Dynamics/generate-pdfs/cv-minimal.pdf"
 
 echo
@@ -35,7 +43,7 @@ bash "$SCRIPT_DIR/engine/render_letter.sh" --root "$DEMO_ROOT" \
 
 echo
 echo "[6/10] Checking the locked spine landed correctly (full pipeline)..."
-python3 "$SCRIPT_DIR/engine/check_cv.py" --root "$DEMO_ROOT" --pipeline full
+"$PY" "$SCRIPT_DIR/engine/check_cv.py" --root "$DEMO_ROOT" --pipeline full
 
 echo
 echo "[7/10] Rendering the built full CV (same per-company selections as cv-minimal.md)..."
@@ -44,7 +52,7 @@ bash "$SCRIPT_DIR/engine/render_cv.sh" --root "$DEMO_ROOT" \
 
 echo
 echo "[8/10] Reporting its page count (no gate — the full CV has no page budget)..."
-python3 "$SCRIPT_DIR/engine/verify_cvs.py" --root "$DEMO_ROOT" --max-pages 0 \
+"$PY" "$SCRIPT_DIR/engine/verify_cvs.py" --root "$DEMO_ROOT" --max-pages 0 \
   "$DEMO_ROOT/applications/offer-pages/Orbital Dynamics/generate-pdfs/cv.pdf"
 
 echo

@@ -25,6 +25,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DEFAULT="$(dirname "$SCRIPT_DIR")"
 MANIFEST="$REPO_DEFAULT/engine.manifest"
 
+# For python_bin() — the leak gate below is Python, and `python3` is not a name that exists on
+# every platform. See engine/lib.sh.
+# shellcheck source=engine/lib.sh
+source "$REPO_DEFAULT/engine/lib.sh"
+
 usage() {
   echo "Usage:" >&2
   echo "  sync.sh pull [--from <repo>] [--root <dir>] [--dry-run]" >&2
@@ -105,7 +110,11 @@ if [ "$MODE" = "push" ]; then
     echo "sync.sh: no manifest paths found under $SRC — nothing to push." >&2
     exit 1
   fi
-  if ! python3 "$REPO_DEFAULT/scripts/audit_public.py" --root "$SRC" "${AUDIT_FILES[@]}"; then
+  if ! PY="$(python_bin)"; then
+    no_python_error "sync.sh"
+    exit 1
+  fi
+  if ! "$PY" "$REPO_DEFAULT/scripts/audit_public.py" --root "$SRC" "${AUDIT_FILES[@]}"; then
     echo "" >&2
     echo "sync.sh: audit FAILED — push aborted, nothing written to $DST." >&2
     exit 1
