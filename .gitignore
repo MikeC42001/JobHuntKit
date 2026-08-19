@@ -22,6 +22,11 @@
 /images/
 /workspace/
 
+# Raw feedback and notes dropped here by hand, outside a session. Local-only: this is a public
+# repo, and the durable record of anything dropped here belongs in the private meta-repo. The
+# folder itself is never committed, so it cannot carry its own README — this comment is it.
+/user_folder/
+
 # Rendered output is a build artifact everywhere except the one committed demo hero image.
 **/generate-pdfs/
 
