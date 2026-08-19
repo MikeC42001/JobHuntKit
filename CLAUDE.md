@@ -41,7 +41,28 @@ renders it to PDF; `engine/verify_cvs.py` gates page count.
 
 ## Current state
 
-**Public since 2026-08-10, currently `v0.1.3`.** `v0.1.0` was the first release; `v0.1.1`
+**Public since 2026-08-10, currently `v0.1.4`. Renaming to JHKApp** — `jobhuntkit.com` turned out
+to be a live, monetized SaaS in the same niche (application tracking, AI resume tailoring, cover
+letters, $7.99/mo–$39 lifetime tiers). Checked 2026-08-18: `JHKApp` is clean (only GitHub hit is a
+dead 2020 repo, no web presence, domain unregistered). Scope is **brand and repo only** — the
+engine's internal identifiers (`.jobhuntkit` marker, `$JOBHUNTKIT_ROOT`, `.jobhuntkit-root`) stay
+exactly as they are, since renaming those would un-root every existing setup for no user-visible
+benefit. Queued last in the current plan, after the feedback fixes below.
+
+**First real outside feedback, from a non-terminal user.** A friend used the toolkit via Claude
+web (not Claude Code, no terminal) and reported four things wrong with his rendered CV. Traced to
+a genuine bug, not user error: `engine/render-support/cv2html-minimal.js` is the only one of the
+four renderers that never strips HTML comments or honours `<!-- render:stop -->` — reproducible
+against the *shipped* `templates/master_cv_minimal.md` itself, which renders a phantom section
+titled `Omit with a reason otherwise. -->` (a comment continuation line mistaken for a heading)
+and prints its own "never copied into a generated CV" notes section into the CV. A second,
+independent bug: the `**Languages:**` skills-line label and the `## Languages` section collide,
+so a non-developer naturally fills both with spoken languages. An approved implementation plan
+(diagnosis, file paths, priority order P0→P2) exists — see `next_session_jobhuntkit.txt` for the
+full plan and execution order; feedback is preserved private-side at
+`workspace/private/jobhuntkit/user_feedback_claudeweb_2026-08-18.md`.
+
+`v0.1.0` was the first release; `v0.1.1`
 followed with the root-resolution fixes (a data root is identified by a `.jobhuntkit` marker
 rather than the presence of `config.json`, and an external `--root` is remembered); `v0.1.2` was
 documentation and repo metadata only; `v0.1.3` was first-run reliability, prompted by a fresh clone
